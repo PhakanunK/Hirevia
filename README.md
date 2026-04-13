@@ -11,5 +11,13 @@ The main goal of this project is to explore how production-style systems are des
 
 This project is not intended for production use, but rather as a hands-on study of building scalable backend systems with a modern full-stack architecture.
 
+## Tech Stack
+
+- Frontend: Next.js
+- Backend: FastAPI
+- Database: PostgreSQL
+- Storage: Supabase Storage
+- Deployment: Docker
+
 ## Design
 Figma: https://www.figma.com/board/SQcDDDLYOwstwrPUvAz3Z8/HireFlow?node-id=0-1&t=ktyvTp8iRldbvMfm-1
