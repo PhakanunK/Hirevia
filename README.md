@@ -20,4 +20,5 @@ This project is not intended for production use, but rather as a hands-on study 
 - Deployment: Docker
 
 ## Design
-Figma: https://www.figma.com/board/SQcDDDLYOwstwrPUvAz3Z8/HireFlow?node-id=0-1&t=ktyvTp8iRldbvMfm-1
+Figma (System Design): https://www.figma.com/board/SQcDDDLYOwstwrPUvAz3Z8/HireFlow?node-id=0-1&t=ktyvTp8iRldbvMfm-1
+Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/HireFlow-UX-UI?m=auto&t=ZMJHvGdFCAaKHE75-6
