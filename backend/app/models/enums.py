@@ -1,22 +1,22 @@
 import enum
 
 class UserStatus(enum.Enum):
-    active = "active"
-    suspended = "suspended"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
 
 class JobType(enum.Enum):
-    full_time = "full_time"
-    internship = "internship"
-    contract = "contract"
+    FULL_TIME = "full_time"
+    INTERNSHIP = "internship"
+    CONTRACT = "contract"
 
 class JobStatus(enum.Enum):
-    open = "open"
-    closed = "closed"
-    draft = "draft"
+    OPEN = "open"
+    CLOSED = "closed"
+    DRAFT = "draft"
 
 class ApplicationStatus(enum.Enum):
-    applied = "applied"
-    screening = "screening"
-    interview = "interview"
-    offer = "offer"
-    rejected = "rejected"
+    APPLIED = "applied"
+    SCREENING = "screening"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    REJECTED = "rejected"
