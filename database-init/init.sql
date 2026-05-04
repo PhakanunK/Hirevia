@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     published_at TIMESTAMPTZ,
     closed_at TIMESTAMPTZ,
-    is_archived BOOLEAN DEFAULT FALSE,
+    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
     archived_at TIMESTAMPTZ,
     CHECK (is_archived = FALSE OR archived_at IS NOT NULL),
 
