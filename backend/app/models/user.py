@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 
 from app.core.database import Base
-from app.models.enums import UserStatus
+from app.models.enums import UserStatus, UserRole
 
 class User(Base):
     __tablename__ = "users"
@@ -21,3 +21,8 @@ class User(Base):
     token_version: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        SAEnum(UserRole, name="user_role", create_type=False),
+        server_default=UserRole.ADMIN.value,
+        nullable=False
+    )
