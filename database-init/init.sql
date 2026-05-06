@@ -1,4 +1,5 @@
 CREATE TYPE user_status AS ENUM ('active', 'suspended');
+CREATE TYPE role AS ENUM ('head_admin', 'admin');
 CREATE TYPE job_type AS ENUM ('full_time', 'internship', 'contract');
 CREATE TYPE job_status AS ENUM ('open', 'closed', 'draft');
 CREATE TYPE application_status AS ENUM ('applied', 'screening', 'interview', 'offer', 'rejected');
@@ -12,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     suspended_at TIMESTAMPTZ NULL,
     token_version INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    role role NOT NULL DEFAULT 'admin'
 );
 
 CREATE TABLE IF NOT EXISTS jobs (
@@ -56,6 +58,7 @@ CREATE TABLE IF NOT EXISTS applications (
     CHECK (interview_date IS NULL OR interview_date >= created_at),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    rejected_at TIMESTAMPTZ,
 
     CONSTRAINT fk_applications_job
         FOREIGN KEY (job_id)
