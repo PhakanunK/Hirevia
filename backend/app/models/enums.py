@@ -4,6 +4,10 @@ class UserStatus(enum.Enum):
     ACTIVE = "active"
     SUSPENDED = "suspended"
 
+class UserRole(enum.Enum):
+    HEAD_ADMIN = "head_admin"
+    ADMIN = "admin"
+
 class JobType(enum.Enum):
     FULL_TIME = "full_time"
     INTERNSHIP = "internship"
