@@ -1,5 +1,5 @@
 CREATE TYPE user_status AS ENUM ('active', 'suspended');
-CREATE TYPE role AS ENUM ('head_admin', 'admin');
+CREATE TYPE user_role AS ENUM ('head_admin', 'admin');
 CREATE TYPE job_type AS ENUM ('full_time', 'internship', 'contract');
 CREATE TYPE job_status AS ENUM ('open', 'closed', 'draft');
 CREATE TYPE application_status AS ENUM ('applied', 'screening', 'interview', 'offer', 'rejected');
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     token_version INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    role role NOT NULL DEFAULT 'admin'
+    role user_role NOT NULL DEFAULT 'admin'
 );
 
 CREATE TABLE IF NOT EXISTS jobs (
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS applications (
     phone VARCHAR(20) NOT NULL,
     resume_url TEXT NOT NULL,
     portfolio_url TEXT,
-    application_status application_status DEFAULT 'applied',
+    status application_status DEFAULT 'applied',
     interview_date TIMESTAMPTZ,
     CHECK (interview_date IS NULL OR interview_date >= created_at),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     user_id INT,
     job_id INT,
     application_id INT,
-    action VARCHAR(100) NOT NULL,
+    action VARCHAR(255) NOT NULL,
     details JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 
 CREATE INDEX idx_jobs_user_id ON jobs(user_id);
 CREATE INDEX idx_applications_job_id ON applications(job_id);
-CREATE INDEX idx_applications_status ON applications(job_id, application_status);
+CREATE INDEX idx_applications_status ON applications(job_id, status);
 CREATE INDEX idx_application_tokens_application_id ON application_tokens(application_id);
 CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
 CREATE INDEX idx_activity_logs_application_id ON activity_logs(application_id);
