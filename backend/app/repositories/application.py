@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.application import Application
 from app.models.enums import ApplicationStatus
-from datetime import datetime, timezone
+from datetime import datetime
 
 class Applicationepository:
     def __init__(self, db: Session):
