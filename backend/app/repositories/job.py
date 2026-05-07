@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.job import Job
 from app.models.enums import JobStatus
+from datetime import datetime, timezone
 
 class JobRepository:
     def __init__(self, db: Session):
@@ -25,6 +26,23 @@ class JobRepository:
     def update(self, job: Job, data: dict) -> Job:
         for key, value in data.items():
             setattr(job, key, value)
+        self.db.commit()
+        self.db.refresh(job)
+        return job
+    
+    def update_status(self, job: Job, status: JobStatus, published_at: datetime | None = None, closed_at: datetime | None = None) -> Job:
+        job.status = status
+        if published_at:
+            job.published_at = published_at
+        if closed_at:
+            job.closed_at = closed_at
+        self.db.commit()
+        self.db.refresh(job)
+        return job
+    
+    def archive(self, job: Job) -> Job:
+        job.is_archived = True
+        job.archived_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(job)
         return job
