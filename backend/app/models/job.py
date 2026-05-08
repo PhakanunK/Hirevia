@@ -1,9 +1,10 @@
 from sqlalchemy import Boolean, String, Integer, DateTime, Enum as SAEnum, func, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.core.database import Base
 from app.models.enums import JobType, JobStatus
+from app.models.user import User
 
 class Job(Base):
     __tablename__ = "jobs"
@@ -33,3 +34,5 @@ class Job(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_archived: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    creator: Mapped["User"] = relationship("User")

@@ -1,8 +1,9 @@
 from sqlalchemy import String, Integer, DateTime, func, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.core.database import Base
+from app.models.application import Application
 
 class ApplicationToken(Base):
     __tablename__ = "application_tokens"
@@ -12,3 +13,5 @@ class ApplicationToken(Base):
     token: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    application: Mapped["Application"] = relationship("Application")
