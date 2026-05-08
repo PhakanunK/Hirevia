@@ -3,7 +3,7 @@ from app.models.application import Application
 from app.models.enums import ApplicationStatus
 from datetime import datetime
 
-class Applicationepository:
+class ApplicationRepository:
     def __init__(self, db: Session):
         self.db = db
 
@@ -19,6 +19,13 @@ class Applicationepository:
     def create(self, data: dict) -> Application:
         application = Application(**data)
         self.db.add(application)
+        self.db.commit()
+        self.db.refresh(application)
+        return application
+    
+    def update(self, application: Application, data: dict) -> Application:
+        for key, value in data.items():
+            setattr(application, key, value)
         self.db.commit()
         self.db.refresh(application)
         return application
