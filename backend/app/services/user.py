@@ -17,8 +17,9 @@ class UserService:
     def __init__(self, db: Session):
         self.repo = UserRepository(db)
 
-    def get_all(self):
-        return self.repo.get_all()
+    def get_all(self, page: int, page_size: int, status=None, role=None):
+        items, total = self.repo.get_all(page, page_size, status, role)
+        return items, total
     
     def get_by_id(self, user_id: int):
         user = self.repo.get_by_id(user_id)

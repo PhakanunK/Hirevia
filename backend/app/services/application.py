@@ -34,8 +34,9 @@ class ApplicationService:
         self.job_repo = JobRepository(db)
         self.token_repo = ApplicationTokenRepository(db)
 
-    def get_all(self):
-        return self.repo.get_all()
+    def get_all(self, page: int, page_size: int, status=None, job_id=None, keyword=None):
+        items, total = self.repo.get_all(page, page_size, status, job_id, keyword)
+        return items, total
     
     def get_by_id(self, application_id: int):
         application = self.repo.get_by_id(application_id)

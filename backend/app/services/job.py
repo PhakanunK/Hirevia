@@ -14,11 +14,13 @@ class JobService:
     def __init__(self, db: Session):
         self.repo = JobRepository(db)
 
-    def get_all(self):
-        return self.repo.get_all()
+    def get_all(self, page: int, page_size: int):
+        items, total = self.repo.get_all(page, page_size)
+        return items, total
     
-    def get_open_job(self):
-        return self.repo.get_open_jobs()
+    def get_open_job(self, page: int, page_size: int, job_type=None, urgent=None, keyword=None):
+        items, total = self.repo.get_open_jobs(page, page_size, job_type, urgent, keyword)
+        return items, total
     
     def get_by_id(self, job_id: int):
         job = self.repo.get_by_id(job_id)
