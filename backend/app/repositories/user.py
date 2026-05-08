@@ -13,8 +13,15 @@ class UserRepository:
     def get_by_email(self, email:str) -> User | None:
         return self.db.query(User).filter(User.email == email).first()
     
-    def get_all(self) -> list[User]:
-        return self.db.query(User).all()
+    def get_all(self, page: int, page_size: int, status=None, role=None) -> tuple[list[User], int]:
+        query = self.db.query(User)
+        if status:
+            query = query.filter(User.status == status)
+        if role:
+            query = query.filter(User.role == role)
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
     
     def create(self, data: dict) -> User:
         user = User(**data)
