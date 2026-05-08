@@ -13,8 +13,21 @@ class ApplicationRepository:
     def get_by_job_and_email(self, job_id: int, email: str) -> Application | None:
         return self.db.query(Application).filter(Application.job_id == job_id, Application.email == email).first()
     
-    def get_all(self) -> list[Application]:
-        return self.db.query(Application).all()
+    def get_all(self, page: int, page_size: int, status=None, job_id=None, keyword=None) -> tuple[list[Application], int]:
+        query = self.db.query(Application)
+        if status:
+            query = query.filter(Application.status == status)
+        if job_id:
+            query = query.filter(Application.job_id == job_id)
+        if keyword:
+            query = query.filter(
+                Application.first_name.ilike(f"%{keyword}%") |
+                Application.last_name.ilike(f"%{keyword}%") |
+                Application.email.ilike(f"%{keyword}%")
+            )
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
     
     def create(self, data: dict) -> Application:
         application = Application(**data)

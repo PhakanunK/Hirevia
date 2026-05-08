@@ -10,11 +10,23 @@ class JobRepository:
     def get_by_id(self, job_id: int) -> Job | None:
         return self.db.query(Job).filter(Job.id == job_id).first()
     
-    def get_all(self) -> list[Job]:
-        return self.db.query(Job).all()
+    def get_all(self, page: int, page_size: int) -> tuple[list[Job], int]:
+        query = self.db.query(Job)
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
     
-    def get_open_jobs(self) -> list[Job]:
-        return self.db.query(Job).filter(Job.status == JobStatus.OPEN).all()
+    def get_open_jobs(self, page: int, page_size: int, job_type=None, urgent=None, keyword=None) -> tuple[list[Job], int]:
+        query = self.db.query(Job).filter(Job.status == JobStatus.OPEN, Job.is_archived == False)
+        if job_type:
+            query = query.filter(Job.job_type == job_type)
+        if urgent is not None:
+            query = query.filter(Job.urgent == urgent)
+        if keyword:
+            query = query.filter(Job.title.ilike(f"%{keyword}%"))
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
     
     def create(self, data: dict) -> Job:
         job = Job(**data)
