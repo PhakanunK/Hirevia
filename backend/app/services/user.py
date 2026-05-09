@@ -34,11 +34,14 @@ class UserService:
         create_data["password_hash"] = hash_password(create_data.pop("password"))
         return self.repo.create(create_data)
     
-    def update(self, user_id: int, data: UserUpdate):
+    def update(self, user_id: int, data: UserUpdate, current_user_id: int):
         user = self.repo.get_by_id(user_id)
         if user is None:
             raise UserNotFound()
         update_data = data.model_dump(exclude_unset=True)
+        if "role" in update_data:
+            if user_id == current_user_id and update_data["role"] != UserRole.HEAD_ADMIN:
+                raise PermissionDenied()
         if "password" in update_data:
             update_data["password_hash"] = hash_password(update_data.pop("password"))
         if "email" in update_data:
@@ -47,10 +50,12 @@ class UserService:
                 raise EmailAlreadyExists()
         return self.repo.update(user, update_data)
     
-    def suspend(self, user_id: int):
+    def suspend(self, user_id: int, current_user_id: int):
         user = self.repo.get_by_id(user_id)
         if user is None:
             raise UserNotFound()
         if user.role == UserRole.HEAD_ADMIN:
+            raise PermissionDenied()
+        if user_id == current_user_id:
             raise PermissionDenied()
         return self.repo.suspend(user)
