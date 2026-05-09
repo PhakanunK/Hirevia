@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.core.database import Base
-from app.models.enums import JobType, JobStatus
+from app.models.enums import JobType, JobStatus, enum_values
 from app.models.user import User
 
 class Job(Base):
@@ -13,7 +13,7 @@ class Job(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     job_type: Mapped[JobType] = mapped_column(
-        SAEnum(JobType, name="job_type", create_type=False),
+        SAEnum(JobType, name="job_type", create_type=False, values_callable=enum_values),
         server_default="full_time",
         nullable=False
     )
@@ -24,7 +24,7 @@ class Job(Base):
     max_salary: Mapped[int] = mapped_column(Integer, nullable=True)
     urgent: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False)
     status: Mapped[JobStatus] = mapped_column(
-        SAEnum(JobStatus, name="job_status", create_type=False),
+        SAEnum(JobStatus, name="job_status", create_type=False, values_callable=enum_values),
         server_default=JobStatus.DRAFT.value,
         nullable=False
     )

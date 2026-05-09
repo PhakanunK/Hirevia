@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from app.core.database import Base
-from app.models.enums import ApplicationStatus
+from app.models.enums import ApplicationStatus, enum_values
 from app.models.job import Job
 
 class Application(Base):
@@ -18,7 +18,7 @@ class Application(Base):
     resume_url: Mapped[str] = mapped_column(String(255), nullable=False)
     portfolio_url: Mapped[str] = mapped_column(String(255), nullable=True)
     status: Mapped[ApplicationStatus] = mapped_column(
-        SAEnum(ApplicationStatus, name="application_status", create_type=False),
+        SAEnum(ApplicationStatus, name="application_status", create_type=False, values_callable=enum_values),
         server_default=ApplicationStatus.APPLIED.value,
         nullable=False
     )
