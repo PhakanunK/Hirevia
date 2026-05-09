@@ -7,6 +7,8 @@ from app.repositories.user import UserRepository
 from app.utils.security import decode_access_token
 from app.models.enums import UserStatus
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/auth/login")
+
 def get_db():
     db = SessionLocal()
     try:
