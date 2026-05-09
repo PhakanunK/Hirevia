@@ -11,4 +11,6 @@ class Settings(BaseSettings):
     PAGE_SIZE_TABLE: int = 10
     MAX_PAGE_SIZE: int = 50
 
+    DEBUG: bool = True
+
 settings = Settings()
