@@ -56,6 +56,21 @@ def create_job(
         return service.create(current_user.id, data)
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to create job")
+    
+@router.patch("/{job_id}/status", response_model=JobAdminResponse)
+def update_job_status(
+    job_id: int,
+    data: JobStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = JobService(db)
+    try:
+        return service.update_status(job_id, data.status)
+    except JobNotFound:
+        raise HTTPException(status_code=404, detail="Job not found")
+    except InvalidStatusTransition:
+        raise HTTPException(status_code=422, detail="Invalid status transition")
 
 @router.patch("/{job_id}", response_model=JobAdminResponse)
 def update_job(
@@ -82,18 +97,3 @@ def archive_job(
         return {"message": "Job archived successfully"}
     except JobNotFound:
         raise HTTPException(status_code=404, detail="Job not found")
-    
-@router.patch("/{job_id}/status", response_model=JobAdminResponse)
-def update_job_status(
-    job_id: int,
-    data: JobStatusUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    service = JobService(db)
-    try:
-        return service.update_status(job_id, data.status)
-    except JobNotFound:
-        raise HTTPException(status_code=404, detail="Job not found")
-    except InvalidStatusTransition:
-        raise HTTPException(status_code=422, detail="Invalid status transition")
