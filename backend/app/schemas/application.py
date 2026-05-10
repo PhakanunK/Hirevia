@@ -30,6 +30,7 @@ class ApplicationResponse(BaseModel):
 
 class ApplicationStatusUpdate(BaseModel):
     status: ApplicationStatus
+    interview_date: datetime | None = None
 
 class ApplicationStatusResponse(BaseModel):
     id: int
