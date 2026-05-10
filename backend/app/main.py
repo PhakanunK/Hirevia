@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.core.config import settings
-from app.api.v1.admin import auth, users
+from app.api.v1.admin import auth, users, jobs
 
 app = FastAPI(
     title="HireFlow ATS",
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/admin/auth", tags=["Admin Auth"])
 app.include_router(users.router, prefix="/admin/users", tags=["Admin Users"])
+app.include_router(jobs.router, prefix="/admin/jobs", tags=["Admin Jobs"])
 
 @app.get("/health")
 def health_check():
