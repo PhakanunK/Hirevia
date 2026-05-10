@@ -16,11 +16,13 @@ def get_jobs( page: int = 1,
     page_size: int = settings.PAGE_SIZE_CARD,
     job_type: JobType | None = None,
     urgent: bool | None = None,
+    salary_min: int | None = None,
+    salary_max: int | None = None,
     keyword: str | None = None,
     db: Session = Depends(get_db)
 ):
     service = JobService(db)
-    jobs, total = service.get_open_job(page, page_size, job_type=job_type, urgent=urgent, keyword=keyword)
+    jobs, total = service.get_open_job(page, page_size, job_type, urgent, salary_min, salary_max, keyword)
     return PaginatedResponse(
         data=jobs,
         meta=PaginationMeta(

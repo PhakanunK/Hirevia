@@ -26,7 +26,7 @@ def get_users( page: int = 1,
     if current_user.role != UserRole.HEAD_ADMIN:
         raise HTTPException(status_code=403, detail="Not authorized")
     service = UserService(db)
-    users, total = service.get_all(page, page_size, status=status, role=role)
+    users, total = service.get_all(page, page_size, status, role)
     return PaginatedResponse(
         data=users,
         meta=PaginationMeta(

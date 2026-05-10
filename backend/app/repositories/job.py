@@ -24,12 +24,16 @@ class JobRepository:
         items = query.offset((page - 1) * page_size).limit(page_size).all()
         return items, total
     
-    def get_open_jobs(self, page: int, page_size: int, job_type=None, urgent=None, keyword=None) -> tuple[list[Job], int]:
+    def get_open_jobs(self, page: int, page_size: int, job_type=None, urgent=None, salary_min=None, salary_max=None, keyword=None) -> tuple[list[Job], int]:
         query = self.db.query(Job).filter(Job.status == JobStatus.OPEN, Job.is_archived == False)
         if job_type:
             query = query.filter(Job.job_type == job_type)
         if urgent is not None:
             query = query.filter(Job.urgent == urgent)
+        if salary_min is not None:
+            query = query.filter(Job.max_salary >= salary_min)
+        if salary_max is not None:
+            query = query.filter(Job.min_salary <= salary_max)
         if keyword:
             query = query.filter(Job.title.ilike(f"%{keyword}%"))
         total = query.count()
