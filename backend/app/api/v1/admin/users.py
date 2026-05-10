@@ -11,6 +11,10 @@ from app.models.enums import UserRole, UserStatus
 
 router = APIRouter()
 
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user = Depends(get_current_user)):
+    return current_user
+
 @router.get("", response_model=PaginatedResponse[UserResponse])
 def get_users( page: int = 1,
     page_size: int = settings.PAGE_SIZE_TABLE,
