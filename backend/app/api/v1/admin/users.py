@@ -33,6 +33,18 @@ def get_users( page: int = 1,
         )
     )
 
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = UserService(db)
+    try:
+        return service.get_by_id(user_id)
+    except UserNotFound:
+        raise HTTPException(status_code=404, detail="User not found")
+
 @router.post("", response_model=UserResponse)
 def create_user(
     data: UserCreate,

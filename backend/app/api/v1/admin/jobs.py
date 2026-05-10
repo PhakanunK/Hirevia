@@ -33,6 +33,18 @@ def get_jobs( page: int = 1,
         )
     )
 
+@router.get("/{job_id}", response_model=JobAdminResponse)
+def get_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = JobService(db)
+    try:
+        return service.get_by_id(job_id)
+    except JobNotFound:
+        raise HTTPException(status_code=404, detail="Job not found")
+
 @router.post("", response_model=JobAdminResponse)
 def create_job(
     data: JobCreate,

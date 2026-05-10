@@ -12,7 +12,7 @@ from app.models.enums import ApplicationStatus
 router = APIRouter()
 
 @router.get("", response_model=PaginatedResponse[ApplicationResponse])
-def get_jobs( page: int = 1,
+def get_applications( page: int = 1,
     page_size: int = settings.PAGE_SIZE_TABLE,
     status: ApplicationStatus | None = None,
     job_id: int | None = None,
@@ -31,9 +31,21 @@ def get_jobs( page: int = 1,
             total_pages=ceil(total / page_size)
         )
     )
+
+@router.get("/{application_id}", response_model=ApplicationResponse)
+def get_application(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = ApplicationService(db)
+    try:
+        return service.get_by_id(application_id)
+    except ApplicationNotFound:
+        raise HTTPException(status_code=404, detail="Application not found")
     
 @router.patch("/{application_id}/status", response_model=ApplicationResponse)
-def update_job_status(
+def update_application_status(
     application_id: int,
     data: ApplicationStatusUpdate,
     db: Session = Depends(get_db),
