@@ -43,6 +43,8 @@ def get_user(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
+    if current_user.role != UserRole.HEAD_ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
     service = UserService(db)
     try:
         return service.get_by_id(user_id)
@@ -86,6 +88,8 @@ def suspend_user(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
+    if current_user.role != UserRole.HEAD_ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
     service = UserService(db)
     try:
         service.suspend(user_id, current_user.id)

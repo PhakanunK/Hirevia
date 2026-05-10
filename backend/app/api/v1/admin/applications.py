@@ -32,18 +32,6 @@ def get_applications( page: int = 1,
         )
     )
 
-@router.get("/{application_id}", response_model=ApplicationResponse)
-def get_application(
-    application_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    service = ApplicationService(db)
-    try:
-        return service.get_by_id(application_id)
-    except ApplicationNotFound:
-        raise HTTPException(status_code=404, detail="Application not found")
-    
 @router.patch("/{application_id}/status", response_model=ApplicationResponse)
 def update_application_status(
     application_id: int,
@@ -58,3 +46,15 @@ def update_application_status(
         raise HTTPException(status_code=404, detail="Application not found")
     except InvalidStatusTransition:
         raise HTTPException(status_code=422, detail="Invalid status transition")
+
+@router.get("/{application_id}", response_model=ApplicationResponse)
+def get_application(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = ApplicationService(db)
+    try:
+        return service.get_by_id(application_id)
+    except ApplicationNotFound:
+        raise HTTPException(status_code=404, detail="Application not found")
