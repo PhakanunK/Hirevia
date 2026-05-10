@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from math import ceil
 
-from app.core.deps import get_db, get_current_user
+from app.core.deps import get_db
 from app.core.config import settings
 from app.services.job import JobService, JobNotFound
 from app.schemas.job import JobPublicResponse
