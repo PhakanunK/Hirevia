@@ -21,7 +21,7 @@ def get_applications( page: int = 1,
     current_user = Depends(get_current_user)
 ):
     service = ApplicationService(db)
-    applications, total = service.get_all(page, page_size, status=status, job_id=job_id, keyword=keyword)
+    applications, total = service.get_all(page, page_size, status, job_id, keyword)
     return PaginatedResponse(
         data=applications,
         meta=PaginationMeta(

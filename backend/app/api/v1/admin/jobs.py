@@ -22,7 +22,7 @@ def get_jobs( page: int = 1,
     current_user = Depends(get_current_user)
 ):
     service = JobService(db)
-    jobs, total = service.get_all(page, page_size, status=status, job_type=job_type, is_archived=is_archived, keyword=keyword)
+    jobs, total = service.get_all(page, page_size, status, job_type, is_archived, keyword)
     return PaginatedResponse(
         data=jobs,
         meta=PaginationMeta(

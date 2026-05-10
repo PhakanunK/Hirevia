@@ -18,8 +18,8 @@ class JobService:
         items, total = self.repo.get_all(page, page_size, status, job_type, is_archived, keyword)
         return items, total
     
-    def get_open_job(self, page: int, page_size: int, job_type=None, urgent=None, keyword=None):
-        items, total = self.repo.get_open_jobs(page, page_size, job_type, urgent, keyword)
+    def get_open_job(self, page: int, page_size: int, job_type=None, urgent=None, salary_min=None, salary_max=None, keyword=None):
+        items, total = self.repo.get_open_jobs(page, page_size, job_type, urgent,salary_min, salary_max, keyword)
         return items, total
     
     def get_by_id(self, job_id: int):
