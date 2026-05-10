@@ -7,7 +7,7 @@ class JobCreate(BaseModel):
     job_type: JobType
     description: str
     requirements: str
-    headcount: int
+    headcount: int = 1
     min_salary: int
     max_salary: int | None = None
     urgent: bool

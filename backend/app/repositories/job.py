@@ -10,8 +10,16 @@ class JobRepository:
     def get_by_id(self, job_id: int) -> Job | None:
         return self.db.query(Job).filter(Job.id == job_id).first()
     
-    def get_all(self, page: int, page_size: int) -> tuple[list[Job], int]:
+    def get_all(self, page: int, page_size: int, status=None, job_type=None, is_archived=None, keyword=None) -> tuple[list[Job], int]:
         query = self.db.query(Job)
+        if status:
+            query = query.filter(Job.status == status)
+        if job_type:
+            query = query.filter(Job.job_type == job_type)
+        if is_archived is not None:
+            query = query.filter(Job.is_archived == is_archived)
+        if keyword:
+            query = query.filter(Job.title.ilike(f"%{keyword}%"))
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()
         return items, total

@@ -14,8 +14,8 @@ class JobService:
     def __init__(self, db: Session):
         self.repo = JobRepository(db)
 
-    def get_all(self, page: int, page_size: int):
-        items, total = self.repo.get_all(page, page_size)
+    def get_all(self, page: int, page_size: int, status=None, job_type=None, is_archived=None, keyword=None):
+        items, total = self.repo.get_all(page, page_size, status, job_type, is_archived, keyword)
         return items, total
     
     def get_open_job(self, page: int, page_size: int, job_type=None, urgent=None, keyword=None):
