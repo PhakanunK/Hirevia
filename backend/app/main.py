@@ -4,7 +4,7 @@ from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.core.config import settings
 from app.api.v1.admin import auth, users, jobs as admin_jobs, applications as admin_applications
-from app.api.v1.public import jobs as public_jobs, apply
+from app.api.v1.public import jobs as public_jobs, apply, status
 
 app = FastAPI(
     title="HireFlow ATS",
@@ -27,6 +27,7 @@ app.include_router(admin_applications.router, prefix="/admin/applications", tags
 
 app.include_router(public_jobs.router, prefix="/public/jobs", tags=["Public Jobs"])
 app.include_router(apply.router, prefix="/public/apply", tags=["Public Apply"])
+app.include_router(status.router, prefix="/public/status", tags=["Public Status"])
 
 @app.get("/health")
 def health_check():
