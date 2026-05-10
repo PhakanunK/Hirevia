@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
     user_id INT,
     title VARCHAR(255) NOT NULL,
-    type job_type DEFAULT 'full_time',
+    job_type job_type DEFAULT 'full_time',
     description TEXT NOT NULL,
     requirements TEXT NOT NULL,
     headcount INT NOT NULL DEFAULT 1 CHECK (headcount > 0),
