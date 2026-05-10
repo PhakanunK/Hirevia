@@ -11,7 +11,6 @@ class JobCreate(BaseModel):
     min_salary: int
     max_salary: int | None = None
     urgent: bool
-    status: JobStatus
 
 class JobUpdate(BaseModel):
     title: str | None = None
@@ -22,7 +21,9 @@ class JobUpdate(BaseModel):
     min_salary: int | None = None
     max_salary: int | None = None
     urgent: bool | None = None
-    status: JobStatus | None = None
+
+class JobStatusUpdate(BaseModel):
+    status: JobStatus
 
 class JobPublicResponse(BaseModel):
     id: int
