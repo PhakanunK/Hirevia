@@ -4,14 +4,14 @@ from math import ceil
 
 from app.core.deps import get_db, get_current_user
 from app.core.config import settings
-from app.services.job import JobService, JobNotFound, InvalidStatusTransition
-from app.schemas.job import JobCreate, JobUpdate, JobStatusUpdate, JobAdminResponse
+from app.services.job import JobService, JobNotFound
+from app.schemas.job import JobPublicResponse
 from app.schemas.pagination import PaginatedResponse, PaginationMeta
-from app.models.enums import JobType, JobStatus
+from app.models.enums import JobType
 
 router = APIRouter()
 
-@router.get("", response_model=PaginatedResponse[JobAdminResponse])
+@router.get("", response_model=PaginatedResponse[JobPublicResponse])
 def get_jobs( page: int = 1,
     page_size: int = settings.PAGE_SIZE_CARD,
     job_type: JobType | None = None,
@@ -31,7 +31,7 @@ def get_jobs( page: int = 1,
         )
     )
 
-@router.get("/{job_id}", response_model=JobAdminResponse)
+@router.get("/{job_id}", response_model=JobPublicResponse)
 def get_job(
     job_id: int,
     db: Session = Depends(get_db)
