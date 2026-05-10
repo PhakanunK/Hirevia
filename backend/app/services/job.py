@@ -31,6 +31,7 @@ class JobService:
     def create(self, user_id: int, data: JobCreate):
         create_data = data.model_dump()
         create_data["user_id"] = user_id
+        create_data["status"] = JobStatus.DRAFT
         return self.repo.create(create_data)
     
     def update(self, job_id: int, data: JobUpdate):
