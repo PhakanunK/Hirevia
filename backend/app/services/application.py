@@ -114,3 +114,11 @@ class ApplicationService:
             interview_date=interview_date
         )
         return result
+    
+    def update_interview_date(self, application_id: int, interview_date: datetime):
+        application = self.repo.get_by_id(application_id)
+        if application is None:
+            raise ApplicationNotFound()
+        if application.status != ApplicationStatus.INTERVIEW:
+            raise InvalidStatusTransition()
+        return self.repo.update_interview_date(application, interview_date)

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from math import ceil
+from datetime import datetime
 
 from app.core.deps import get_db, get_current_user
 from app.core.config import settings
 from app.services.application import ApplicationService, ApplicationNotFound, InvalidStatusTransition
-from app.schemas.application import ApplicationStatusUpdate, ApplicationResponse
+from app.schemas.application import ApplicationStatusUpdate, ApplicationResponse, InterviewDateUpdate
 from app.schemas.pagination import PaginatedResponse, PaginationMeta
 from app.models.enums import ApplicationStatus
 
@@ -58,3 +59,18 @@ def get_application(
         return service.get_by_id(application_id)
     except ApplicationNotFound:
         raise HTTPException(status_code=404, detail="Application not found")
+    
+@router.patch("/{application_id}/interview-date", response_model=ApplicationResponse)
+def update_interview_date(
+    application_id: int,
+    data: InterviewDateUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    service = ApplicationService(db)
+    try:
+        return service.update_interview_date(application_id, data.interview_date)
+    except ApplicationNotFound:
+        raise HTTPException(status_code=404, detail="Application not found")
+    except InvalidStatusTransition:
+        raise HTTPException(status_code=422, detail="Application is not in interview stage")

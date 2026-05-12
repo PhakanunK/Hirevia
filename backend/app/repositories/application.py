@@ -52,3 +52,9 @@ class ApplicationRepository:
         self.db.commit()
         self.db.refresh(application)
         return application
+    
+    def update_interview_date(self, application: Application, interview_date: datetime) -> Application:
+        application.interview_date = interview_date
+        self.db.commit()
+        self.db.refresh(application)
+        return application
