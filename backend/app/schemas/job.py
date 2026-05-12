@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from app.models.enums import JobType, JobStatus
 from datetime import datetime
 
@@ -12,6 +12,12 @@ class JobCreate(BaseModel):
     max_salary: int | None = None
     urgent: bool
 
+    @field_validator("headcount")
+    def headcount_must_be_positive(cls, v):
+        if v < 1:
+            raise ValueError("Headcount must be at least 1")
+        return v
+
 class JobUpdate(BaseModel):
     title: str | None = None
     job_type: JobType | None = None
@@ -21,6 +27,12 @@ class JobUpdate(BaseModel):
     min_salary: int | None = None
     max_salary: int | None = None
     urgent: bool | None = None
+
+    @field_validator("headcount")
+    def headcount_must_be_positive(cls, v):
+        if v is not None and v < 1:
+            raise ValueError("Headcount must be at least 1")
+        return v
 
 class JobStatusUpdate(BaseModel):
     status: JobStatus
