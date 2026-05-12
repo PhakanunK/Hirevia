@@ -5,6 +5,7 @@ from app.repositories.application_token import ApplicationTokenRepository
 from app.schemas.application import ApplicationSubmit, ApplicationStatusUpdate
 from app.models.enums import JobStatus, ApplicationStatus
 from datetime import datetime, timezone, timedelta
+from app.utils.email import send_application_confirmation, send_status_update
 import secrets
 
 class ApplicationNotFound(Exception):
@@ -71,6 +72,12 @@ class ApplicationService:
             "token": token,
             "expires_at": datetime.now(timezone.utc) + timedelta(days=30)
         })
+        send_application_confirmation(
+            to_email=data.email,
+            first_name=data.first_name,
+            job_title=job.title,
+            tracking_token=token
+        )
         return application, token
     
     def get_status(self, token: str):
@@ -98,4 +105,12 @@ class ApplicationService:
         rejected_at = None
         if status == ApplicationStatus.REJECTED:
             rejected_at = datetime.now(timezone.utc)
-        return self.repo.update_status(application, status, interview_date, rejected_at=rejected_at)
+        result = self.repo.update_status(application, status, interview_date, rejected_at=rejected_at)
+        send_status_update(
+            to_email=result.email,
+            first_name=result.first_name,
+            job_title=result.job.title,
+            status=status.value,
+            interview_date=interview_date
+        )
+        return result
