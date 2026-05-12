@@ -17,6 +17,12 @@ class JobCreate(BaseModel):
         if v < 1:
             raise ValueError("Headcount must be at least 1")
         return v
+    
+    @field_validator("max_salary")
+    def max_must_be_greater_than_min(cls, v, info):
+        if v is not None and v < info.data.get("min_salary", 0):
+            raise ValueError("max_salary must be greater than min_salary")
+        return v
 
 class JobUpdate(BaseModel):
     title: str | None = None
@@ -32,6 +38,13 @@ class JobUpdate(BaseModel):
     def headcount_must_be_positive(cls, v):
         if v is not None and v < 1:
             raise ValueError("Headcount must be at least 1")
+        return v
+    
+    @field_validator("max_salary")
+    def max_must_be_greater_than_min(cls, v, info):
+        min_salary = info.data.get("min_salary")
+        if v is not None and min_salary is not None and v < min_salary:
+            raise ValueError("max_salary must be greater than min_salary")
         return v
 
 class JobStatusUpdate(BaseModel):
