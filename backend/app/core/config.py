@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     PAGE_SIZE_CARD: int = 6
     PAGE_SIZE_TABLE: int = 10
     MAX_PAGE_SIZE: int = 50
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
+    SUPABASE_BUCKET: str = "resumes"
 
     DEBUG: bool = True
 
