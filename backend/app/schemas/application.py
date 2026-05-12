@@ -45,3 +45,6 @@ class ApplicationStatusResponse(BaseModel):
 class ApplicationSubmitResponse(BaseModel):
     message: str
     tracking_token: str
+
+class InterviewDateUpdate(BaseModel):
+    interview_date: datetime
