@@ -1,6 +1,7 @@
 "use client"
 
-import { useSearchParams, Suspense } from "next/navigation"
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useApplicationStatus } from "@/hooks/use-application-status"
 import type { ApplicationStatus } from "@/lib/models/application.model"
 import { CheckCircle2, Circle, XCircle, User, Loader2 } from "lucide-react"

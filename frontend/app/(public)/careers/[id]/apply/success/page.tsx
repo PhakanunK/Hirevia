@@ -1,13 +1,12 @@
-import Link from "next/link"
-import { FileCheck } from "lucide-react"
+"use client"
 
-export default async function ApplySuccessPage({
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ token?: string }>
-}) {
-  const { token } = await searchParams
+import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { FileCheck, Loader2 } from "lucide-react"
+
+function SuccessContent() {
+  const token = useSearchParams().get("token")
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-16 text-center">
@@ -43,5 +42,13 @@ export default async function ApplySuccessPage({
         </p>
       )}
     </div>
+  )
+}
+
+export default function ApplySuccessPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>}>
+      <SuccessContent />
+    </Suspense>
   )
 }

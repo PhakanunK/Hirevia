@@ -29,6 +29,7 @@ import {
 import { PageLoader, PageError } from "@/components/ui/page-states"
 import { useApplication } from "@/hooks/use-application"
 import { APPLICATION_STATUS_CONFIG } from "@/lib/utils/constants"
+import { getResumeViewerUrl, getResumeDownloadUrl } from "@/lib/utils/file.utils"
 import type { ApplicationStatus } from "@/lib/models/application.model"
 import { Mail, Phone, FileText, Globe, Calendar, Loader2, AlertCircle } from "lucide-react"
 
@@ -116,7 +117,7 @@ export default function ApplicationDetailPage({
 
               <div className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <a href={application.resume_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <a href={getResumeViewerUrl(application.resume_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   View Resume
                 </a>
               </div>
@@ -183,7 +184,9 @@ export default function ApplicationDetailPage({
                 <a href={`mailto:${application.email}`}>Send Email</a>
               </Button>
               <Button variant="outline" size="sm" className="w-full" asChild>
-                <a href={application.resume_url} target="_blank" rel="noopener noreferrer">Download Resume</a>
+                <a href={getResumeDownloadUrl(application.resume_url, application.first_name, application.last_name)} target="_blank" rel="noopener noreferrer">
+                  Download Resume
+                </a>
               </Button>
             </CardContent>
           </Card>
