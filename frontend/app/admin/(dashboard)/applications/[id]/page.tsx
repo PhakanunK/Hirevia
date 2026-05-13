@@ -25,9 +25,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { adminFetch } from "@/lib/api"
-import { APPLICATION_STATUS_CONFIG, NEXT_APPLICATION_STATUS } from "@/lib/constants"
-import type { ApplicationResponse, ApplicationStatus, JobAdminResponse } from "@/lib/types"
+import { APPLICATION_STATUS_CONFIG, NEXT_APPLICATION_STATUS } from "@/lib/utils/constants"
+import { getApplication, updateApplicationStatus, updateInterviewDate } from "@/lib/actions/application.action"
+import { getJob } from "@/lib/actions/job.action"
+import type { ApplicationResponse, ApplicationStatus } from "@/lib/models/application.model"
 import { Mail, Phone, FileText, Globe, Calendar, Loader2, AlertCircle } from "lucide-react"
 
 export default function ApplicationDetailPage({
@@ -48,7 +49,6 @@ export default function ApplicationDetailPage({
   const [interviewDateInput, setInterviewDateInput] = useState("")
   const [interviewTimeInput, setInterviewTimeInput] = useState("")
 
-  // Modal states
   const [showInterviewModal, setShowInterviewModal] = useState(false)
   const [showEditInterviewModal, setShowEditInterviewModal] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -59,59 +59,49 @@ export default function ApplicationDetailPage({
     const fetchApplication = async () => {
       setIsLoading(true)
       setError(null)
-
       try {
-        const data = await adminFetch<ApplicationResponse>(`/applications/${id}`)
+        const data = await getApplication(id)
         setApplication(data)
         setCurrentStatus(data.status)
         setScheduledInterviewDate(data.interview_date || null)
-
-        // job_title is not in ApplicationResponse — fetch separately
         try {
-          const job = await adminFetch<JobAdminResponse>(`/jobs/${data.job_id}`)
+          const job = await getJob(data.job_id)
           setJobTitle(job.title)
         } catch {
           // non-critical, falls back to job_id
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : "An error occurred")
       } finally {
         setIsLoading(false)
       }
     }
-
     fetchApplication()
   }, [id])
 
-  const updateStatus = async (newStatus: ApplicationStatus, interviewDate?: string) => {
+  const handleUpdateStatus = async (newStatus: ApplicationStatus, interviewDate?: string) => {
     setIsUpdating(true)
     try {
-      await adminFetch(`/applications/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: newStatus,
-          ...(interviewDate && { interview_date: interviewDate }),
-        }),
+      await updateApplicationStatus(id, {
+        status: newStatus,
+        ...(interviewDate && { interview_date: interviewDate }),
       })
       setCurrentStatus(newStatus)
       if (interviewDate) setScheduledInterviewDate(interviewDate)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update status')
+      setError(err instanceof Error ? err.message : "Failed to update status")
     } finally {
       setIsUpdating(false)
     }
   }
 
-  const updateInterviewDate = async (interviewDate: string) => {
+  const handleUpdateInterviewDate = async (interviewDate: string) => {
     setIsUpdating(true)
     try {
-      await adminFetch(`/applications/${id}/interview-date`, {
-        method: 'PATCH',
-        body: JSON.stringify({ interview_date: interviewDate }),
-      })
+      await updateInterviewDate(id, { interview_date: interviewDate })
       setScheduledInterviewDate(interviewDate)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update interview date')
+      setError(err instanceof Error ? err.message : "Failed to update interview date")
     } finally {
       setIsUpdating(false)
     }
@@ -150,7 +140,6 @@ export default function ApplicationDetailPage({
   const handleMoveToNextStage = () => {
     const next = NEXT_APPLICATION_STATUS[currentStatus]
     if (!next) return
-
     if (next === "interview") {
       setShowInterviewModal(true)
     } else {
@@ -161,7 +150,7 @@ export default function ApplicationDetailPage({
 
   const confirmStatusChange = async () => {
     if (pendingStatus) {
-      await updateStatus(pendingStatus)
+      await handleUpdateStatus(pendingStatus)
       setPendingStatus(null)
     }
     setShowConfirmModal(false)
@@ -170,7 +159,7 @@ export default function ApplicationDetailPage({
   const confirmInterview = async () => {
     if (interviewDateInput && interviewTimeInput) {
       const dateTime = `${interviewDateInput}T${interviewTimeInput}:00`
-      await updateStatus("interview", dateTime)
+      await handleUpdateStatus("interview", dateTime)
       setShowInterviewModal(false)
       setInterviewDateInput("")
       setInterviewTimeInput("")
@@ -189,7 +178,7 @@ export default function ApplicationDetailPage({
   const confirmEditInterview = async () => {
     if (interviewDateInput && interviewTimeInput) {
       const dateTime = `${interviewDateInput}T${interviewTimeInput}:00`
-      await updateInterviewDate(dateTime)
+      await handleUpdateInterviewDate(dateTime)
       setShowEditInterviewModal(false)
       setInterviewDateInput("")
       setInterviewTimeInput("")
@@ -197,7 +186,7 @@ export default function ApplicationDetailPage({
   }
 
   const confirmReject = async () => {
-    await updateStatus("rejected")
+    await handleUpdateStatus("rejected")
     setShowRejectModal(false)
   }
 
@@ -248,12 +237,7 @@ export default function ApplicationDetailPage({
                       })}
                     </span>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={openEditInterviewModal}
-                    disabled={isUpdating}
-                  >
+                  <Button variant="outline" size="sm" onClick={openEditInterviewModal} disabled={isUpdating}>
                     Edit Time
                   </Button>
                 </div>
@@ -275,12 +259,7 @@ export default function ApplicationDetailPage({
 
               <div className="flex items-center gap-2 text-sm">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={application.resume_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
+                <a href={application.resume_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   View Resume
                 </a>
               </div>
@@ -288,12 +267,7 @@ export default function ApplicationDetailPage({
               {application.portfolio_url && (
                 <div className="flex items-center gap-2 text-sm">
                   <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={application.portfolio_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
+                  <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                     Portfolio: {application.portfolio_url}
                   </a>
                 </div>
@@ -307,11 +281,7 @@ export default function ApplicationDetailPage({
                   </Button>
                 )}
                 {canReject && (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setShowRejectModal(true)}
-                    disabled={isUpdating}
-                  >
+                  <Button variant="destructive" onClick={() => setShowRejectModal(true)} disabled={isUpdating}>
                     Reject
                   </Button>
                 )}
@@ -323,7 +293,7 @@ export default function ApplicationDetailPage({
           </Card>
         </div>
 
-        {/* Sidebar Info */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -365,14 +335,13 @@ export default function ApplicationDetailPage({
         </div>
       </div>
 
-      {/* Edit Interview Schedule Modal */}
+      {/* Edit Interview Modal */}
       <Dialog open={showEditInterviewModal} onOpenChange={setShowEditInterviewModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Interview Time</DialogTitle>
             <DialogDescription>
-              Update the interview date and time for {application.first_name}{" "}
-              {application.last_name}.
+              Update the interview date and time for {application.first_name} {application.last_name}.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -380,33 +349,17 @@ export default function ApplicationDetailPage({
               <Label htmlFor="edit-interview-date">Date</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="edit-interview-date"
-                  type="date"
-                  value={interviewDateInput}
-                  onChange={(e) => setInterviewDateInput(e.target.value)}
-                  className="pl-10"
-                />
+                <Input id="edit-interview-date" type="date" value={interviewDateInput} onChange={(e) => setInterviewDateInput(e.target.value)} className="pl-10" />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-interview-time">Time</Label>
-              <Input
-                id="edit-interview-time"
-                type="time"
-                value={interviewTimeInput}
-                onChange={(e) => setInterviewTimeInput(e.target.value)}
-              />
+              <Input id="edit-interview-time" type="time" value={interviewTimeInput} onChange={(e) => setInterviewTimeInput(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditInterviewModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={confirmEditInterview} 
-              disabled={!interviewDateInput || !interviewTimeInput || isUpdating}
-            >
+            <Button variant="outline" onClick={() => setShowEditInterviewModal(false)}>Cancel</Button>
+            <Button onClick={confirmEditInterview} disabled={!interviewDateInput || !interviewTimeInput || isUpdating}>
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Interview
             </Button>
@@ -414,14 +367,13 @@ export default function ApplicationDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Interview Schedule Modal */}
+      {/* Schedule Interview Modal */}
       <Dialog open={showInterviewModal} onOpenChange={setShowInterviewModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Schedule Interview</DialogTitle>
             <DialogDescription>
-              Select a date and time for the interview with {application.first_name}{" "}
-              {application.last_name}.
+              Select a date and time for the interview with {application.first_name} {application.last_name}.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -429,33 +381,17 @@ export default function ApplicationDetailPage({
               <Label htmlFor="interview-date">Date</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="interview-date"
-                  type="date"
-                  value={interviewDateInput}
-                  onChange={(e) => setInterviewDateInput(e.target.value)}
-                  className="pl-10"
-                />
+                <Input id="interview-date" type="date" value={interviewDateInput} onChange={(e) => setInterviewDateInput(e.target.value)} className="pl-10" />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="interview-time">Time</Label>
-              <Input
-                id="interview-time"
-                type="time"
-                value={interviewTimeInput}
-                onChange={(e) => setInterviewTimeInput(e.target.value)}
-              />
+              <Input id="interview-time" type="time" value={interviewTimeInput} onChange={(e) => setInterviewTimeInput(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInterviewModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={confirmInterview} 
-              disabled={!interviewDateInput || !interviewTimeInput || isUpdating}
-            >
+            <Button variant="outline" onClick={() => setShowInterviewModal(false)}>Cancel</Button>
+            <Button onClick={confirmInterview} disabled={!interviewDateInput || !interviewTimeInput || isUpdating}>
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Schedule Interview
             </Button>
@@ -463,7 +399,7 @@ export default function ApplicationDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Generic Confirm Modal */}
+      {/* Confirm Status Change Modal */}
       <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -483,7 +419,7 @@ export default function ApplicationDetailPage({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reject Confirm Modal */}
+      {/* Reject Modal */}
       <AlertDialog open={showRejectModal} onOpenChange={setShowRejectModal}>
         <AlertDialogContent>
           <AlertDialogHeader>

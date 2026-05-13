@@ -5,9 +5,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { publicFetch } from "@/lib/api"
-import { formatJobType, formatSalaryCompact } from "@/lib/format"
-import type { JobPublicResponse, PaginatedResponse } from "@/lib/types"
+import { getPublicJobs } from "@/lib/actions/public.action"
+import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
+import type { JobPublicResponse } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function HomePage() {
@@ -15,9 +15,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", {
-      params: { page: "1", page_size: "3" },
-    })
+    getPublicJobs({ page: 1, page_size: 3 })
       .then((res) => setFeaturedJobs(res.data))
       .catch(() => {})
       .finally(() => setIsLoading(false))

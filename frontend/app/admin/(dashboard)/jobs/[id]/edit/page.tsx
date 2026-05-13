@@ -4,10 +4,10 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { adminFetch } from "@/lib/api"
-import type { JobAdminResponse, JobUpdate } from "@/lib/types"
-import { JobFormFields, type JobFormData } from "@/components/admin/job-form-fields"
 import { PageLoader, PageError } from "@/components/ui/page-states"
+import { getJob, updateJob, archiveJob } from "@/lib/actions/job.action"
+import type { JobUpdate } from "@/lib/models/job.model"
+import { JobFormFields, type JobFormData } from "@/components/admin/job-form-fields"
 
 export default function EditJobPage({
   params,
@@ -23,7 +23,7 @@ export default function EditJobPage({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    adminFetch<JobAdminResponse>(`/jobs/${id}`)
+    getJob(id)
       .then((data) => {
         setFormData({
           title: data.title,
@@ -57,12 +57,7 @@ export default function EditJobPage({
         max_salary: formData.max_salary ? parseInt(formData.max_salary) * 1000 : null,
         urgent: formData.urgent,
       }
-
-      await adminFetch<JobAdminResponse>(`/jobs/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      })
-
+      await updateJob(id, payload)
       router.push(`/admin/jobs/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update job")
@@ -75,7 +70,7 @@ export default function EditJobPage({
     if (!confirm("Are you sure you want to archive this job?")) return
     setIsDeleting(true)
     try {
-      await adminFetch(`/jobs/${id}`, { method: "DELETE" })
+      await archiveJob(id)
       router.push("/admin/jobs")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive job")

@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PageLoader, PageError } from "@/components/ui/page-states"
-import { adminFetch } from "@/lib/api"
-import { formatJobType, formatSalary } from "@/lib/format"
-import { JOB_STATUS_COLORS } from "@/lib/constants"
-import type { JobAdminResponse, JobStatus } from "@/lib/types"
+import { formatJobType, formatSalary } from "@/lib/utils/format.utils"
+import { JOB_STATUS_COLORS } from "@/lib/utils/constants"
+import { getJob, updateJobStatus, archiveJob } from "@/lib/actions/job.action"
+import type { JobAdminResponse, JobStatus } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function JobDetailPage({
@@ -26,7 +26,7 @@ export default function JobDetailPage({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   useEffect(() => {
-    adminFetch<JobAdminResponse>(`/jobs/${id}`)
+    getJob(id)
       .then(setJob)
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load job"))
       .finally(() => setIsLoading(false))
@@ -35,10 +35,7 @@ export default function JobDetailPage({
   const handleStatusChange = async (newStatus: JobStatus) => {
     setIsUpdatingStatus(true)
     try {
-      const updated = await adminFetch<JobAdminResponse>(`/jobs/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: newStatus }),
-      })
+      const updated = await updateJobStatus(id, newStatus)
       setJob(updated)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update status")
@@ -50,7 +47,7 @@ export default function JobDetailPage({
   const handleArchive = async () => {
     setIsArchiving(true)
     try {
-      await adminFetch(`/jobs/${id}`, { method: "DELETE" })
+      await archiveJob(id)
       router.push("/admin/jobs")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive job")
