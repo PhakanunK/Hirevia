@@ -1,15 +1,14 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PageLoader, PageError } from "@/components/ui/page-states"
+import { useJob } from "@/hooks/use-job"
 import { formatJobType, formatSalary } from "@/lib/utils/format.utils"
 import { JOB_STATUS_COLORS } from "@/lib/utils/constants"
-import { getJob, updateJobStatus, archiveJob } from "@/lib/actions/job.action"
-import type { JobAdminResponse, JobStatus } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function JobDetailPage({
@@ -19,41 +18,7 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
-  const [job, setJob] = useState<JobAdminResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isArchiving, setIsArchiving] = useState(false)
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
-
-  useEffect(() => {
-    getJob(id)
-      .then(setJob)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load job"))
-      .finally(() => setIsLoading(false))
-  }, [id])
-
-  const handleStatusChange = async (newStatus: JobStatus) => {
-    setIsUpdatingStatus(true)
-    try {
-      const updated = await updateJobStatus(id, newStatus)
-      setJob(updated)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status")
-    } finally {
-      setIsUpdatingStatus(false)
-    }
-  }
-
-  const handleArchive = async () => {
-    setIsArchiving(true)
-    try {
-      await archiveJob(id)
-      router.push("/admin/jobs")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to archive job")
-      setIsArchiving(false)
-    }
-  }
+  const { job, isLoading, error, isArchiving, isUpdatingStatus, handleStatusChange, handleArchive } = useJob(id)
 
   if (isLoading) return <PageLoader />
   if (error || !job) return <PageError message={error ?? "Job not found"} action={{ label: "Back to Jobs", onClick: () => router.push("/admin/jobs") }} />
@@ -85,23 +50,9 @@ export default function JobDetailPage({
               {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
             </Badge>
           </div>
-          <p>
-            Created:{" "}
-            {new Date(job.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+          <p>Created: {new Date(job.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
           {job.published_at && (
-            <p>
-              Published:{" "}
-              {new Date(job.published_at).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+            <p>Published: {new Date(job.published_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
           )}
           {job.urgent && <Badge variant="destructive" className="mt-2">Urgent</Badge>}
         </div>

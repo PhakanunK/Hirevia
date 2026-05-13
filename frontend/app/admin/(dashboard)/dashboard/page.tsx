@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,21 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { getDashboard } from "@/lib/actions/dashboard.action"
-import type { DashboardResponse } from "@/lib/models/dashboard.model"
+import { useDashboard } from "@/hooks/use-dashboard"
 import { Briefcase, AlertTriangle, FileText, CalendarDays, Users, CheckCircle, Clock, Loader2 } from "lucide-react"
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    getDashboard()
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load dashboard"))
-      .finally(() => setIsLoading(false))
-  }, [])
+  const { data, isLoading, error } = useDashboard()
 
   if (isLoading) {
     return (
@@ -162,51 +151,23 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <div className="rounded-lg bg-blue-100 p-2">
-                <FileText className="h-5 w-5 text-blue-600" />
+            {[
+              { icon: FileText, color: "blue", label: "Applied", value: data.summary.applied },
+              { icon: Clock, color: "yellow", label: "Screening", value: data.summary.screening },
+              { icon: CalendarDays, color: "purple", label: "Interview", value: data.summary.interview },
+              { icon: CheckCircle, color: "green", label: "Offer", value: data.summary.offer },
+              { icon: Users, color: "gray", label: "Rejected", value: data.summary.rejected },
+            ].map(({ icon: Icon, color, label, value }) => (
+              <div key={label} className="flex items-center gap-3 rounded-lg border p-4">
+                <div className={`rounded-lg bg-${color}-100 p-2`}>
+                  <Icon className={`h-5 w-5 text-${color}-600`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{value}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{data.summary.applied}</p>
-                <p className="text-xs text-muted-foreground">Applied</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <div className="rounded-lg bg-yellow-100 p-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{data.summary.screening}</p>
-                <p className="text-xs text-muted-foreground">Screening</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <div className="rounded-lg bg-purple-100 p-2">
-                <CalendarDays className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{data.summary.interview}</p>
-                <p className="text-xs text-muted-foreground">Interview</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <div className="rounded-lg bg-green-100 p-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{data.summary.offer}</p>
-                <p className="text-xs text-muted-foreground">Offer</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <div className="rounded-lg bg-gray-100 p-2">
-                <Users className="h-5 w-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{data.summary.rejected}</p>
-                <p className="text-xs text-muted-foreground">Rejected</p>
-              </div>
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>

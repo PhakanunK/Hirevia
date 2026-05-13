@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense } from "react"
-import Link from "next/link"
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,69 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useApplicationsTable } from "@/hooks/use-applications-table"
 import { APPLICATION_STATUS_CONFIG } from "@/lib/utils/constants"
-import { getApplications } from "@/lib/actions/application.action"
-import { getJobs } from "@/lib/actions/job.action"
-import type { ApplicationResponse } from "@/lib/models/application.model"
-import type { PaginationMeta } from "@/lib/models/user.model"
-import type { JobAdminResponse } from "@/lib/models/job.model"
 import { Search, Eye, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 
 function ApplicationsContent() {
-  const searchParams = useSearchParams()
-  const jobIdFilter = searchParams.get("job_id")
-
-  const [applications, setApplications] = useState<ApplicationResponse[]>([])
-  const [jobs, setJobs] = useState<JobAdminResponse[]>([])
-  const [meta, setMeta] = useState<PaginationMeta | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [selectedJob, setSelectedJob] = useState<string>(jobIdFilter || "all")
-  const [currentPage, setCurrentPage] = useState(1)
-
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 400)
-    return () => clearTimeout(timer)
-  }, [search])
-
-  useEffect(() => {
-    getJobs({ page: 1, page_size: 100 })
-      .then((res) => setJobs(res.data))
-      .catch(() => {})
-  }, [])
-
-  const fetchApplications = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const res = await getApplications({
-        page: currentPage,
-        keyword: debouncedSearch || undefined,
-        job_id: selectedJob !== "all" ? selectedJob : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-      })
-      setApplications(res.data)
-      setMeta(res.meta)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [currentPage, statusFilter, selectedJob, debouncedSearch])
-
-  useEffect(() => {
-    fetchApplications()
-  }, [fetchApplications])
-
-  const handleStatusChange = (value: string) => { setStatusFilter(value); setCurrentPage(1) }
-  const handleJobChange = (value: string) => { setSelectedJob(value); setCurrentPage(1) }
-  const handleSearchChange = (value: string) => { setSearch(value); setCurrentPage(1) }
-
-  const totalPages = meta ? meta.total_pages : 1
+  const jobIdFilter = useSearchParams().get("job_id") ?? undefined
+  const {
+    applications, jobs, isLoading, error,
+    search, statusFilter, selectedJob,
+    currentPage, totalPages,
+    setSearch, setStatusFilter, setSelectedJob, setCurrentPage, retry,
+  } = useApplicationsTable(jobIdFilter)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -102,25 +51,23 @@ function ApplicationsContent() {
           <Input
             placeholder="Search by name or email"
             value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
           />
         </div>
         <div className="flex gap-4">
-          <Select value={selectedJob} onValueChange={handleJobChange}>
+          <Select value={selectedJob} onValueChange={setSelectedJob}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Job" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Jobs</SelectItem>
               {jobs.map((job) => (
-                <SelectItem key={job.id} value={String(job.id)}>
-                  {job.title}
-                </SelectItem>
+                <SelectItem key={job.id} value={String(job.id)}>{job.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -162,7 +109,7 @@ function ApplicationsContent() {
                   <div className="flex flex-col items-center gap-3">
                     <AlertCircle className="h-6 w-6 text-destructive" />
                     <p className="text-muted-foreground">{error}</p>
-                    <Button size="sm" onClick={fetchApplications}>Retry</Button>
+                    <Button size="sm" onClick={retry}>Retry</Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -175,9 +122,7 @@ function ApplicationsContent() {
             ) : (
               applications.map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell className="font-medium">
-                    {app.first_name} {app.last_name}
-                  </TableCell>
+                  <TableCell className="font-medium">{app.first_name} {app.last_name}</TableCell>
                   <TableCell>{app.email}</TableCell>
                   <TableCell>
                     {jobs.find((j) => j.id === app.job_id)?.title ?? `#${app.job_id}`}
@@ -187,9 +132,7 @@ function ApplicationsContent() {
                       {APPLICATION_STATUS_CONFIG[app.status].label}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {new Date(app.created_at).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -217,31 +160,15 @@ function ApplicationsContent() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1 || isLoading}
-          >
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1 || isLoading}>
             Previous
           </Button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentPage(page)}
-              disabled={isLoading}
-            >
+            <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(page)} disabled={isLoading}>
               {page}
             </Button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || isLoading}
-          >
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isLoading}>
             Next
           </Button>
         </div>

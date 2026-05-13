@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getPublicJob } from "@/lib/actions/public.action"
+import { useCareer } from "@/hooks/use-career"
 import { formatJobType, formatSalary } from "@/lib/utils/format.utils"
-import type { JobPublicResponse } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function JobDetailPage({
@@ -15,26 +14,7 @@ export default function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
-  const [job, setJob] = useState<JobPublicResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchJob()
-  }, [id])
-
-  const fetchJob = async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await getPublicJob(id)
-      setJob(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load job")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const { job, isLoading, error, retry } = useCareer(id)
 
   if (isLoading) {
     return (
@@ -50,7 +30,7 @@ export default function JobDetailPage({
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 text-center">
         <p className="mb-4 text-destructive">{error || "Job not found"}</p>
-        <Button onClick={fetchJob}>Try Again</Button>
+        <Button onClick={retry}>Try Again</Button>
       </div>
     )
   }
@@ -83,9 +63,7 @@ export default function JobDetailPage({
 
         <div className="mb-8">
           <h2 className="mb-2 font-semibold">Requirements</h2>
-          <p className="whitespace-pre-line text-sm text-muted-foreground">
-            {job.requirements}
-          </p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">{job.requirements}</p>
         </div>
 
         {job.status === "open" ? (

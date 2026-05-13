@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,10 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { PageLoader, PageError } from "@/components/ui/page-states"
+import { useUser } from "@/hooks/use-user"
 import { USER_STATUS_CONFIG, USER_ROLE_CONFIG } from "@/lib/utils/constants"
-import { getUser, updateUser, suspendUser } from "@/lib/actions/user.action"
-import type { UserResponse, UserUpdate, UserRole } from "@/lib/models/user.model"
-import { useAdminContext } from "@/contexts/admin-context"
+import type { UserRole } from "@/lib/models/user.model"
 import { Loader2, Mail, User, Shield, Calendar } from "lucide-react"
 
 export default function UserDetailPage({
@@ -38,68 +37,17 @@ export default function UserDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
-  const { currentUser } = useAdminContext()
-
-  const [user, setUser] = useState<UserResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isSuspending, setIsSuspending] = useState(false)
-  const [showSuspendModal, setShowSuspendModal] = useState(false)
-
-  const [editForm, setEditForm] = useState<UserUpdate>({})
-
-  useEffect(() => {
-    getUser(id)
-      .then((data) => {
-        setUser(data)
-        setEditForm({ username: data.username, email: data.email, role: data.role })
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load user"))
-      .finally(() => setIsLoading(false))
-  }, [id])
-
-  const handleSave = async () => {
-    if (!user) return
-    setIsSaving(true)
-    setError(null)
-    try {
-      const patch: UserUpdate = {}
-      if (editForm.username !== user.username) patch.username = editForm.username
-      if (editForm.email !== user.email) patch.email = editForm.email
-      if (!isSelf && editForm.role !== user.role) patch.role = editForm.role
-      if (editForm.password) patch.password = editForm.password
-      const updated = await updateUser(id, patch)
-      setUser(updated)
-      setIsEditing(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleSuspend = async () => {
-    setIsSuspending(true)
-    try {
-      await suspendUser(id)
-      router.push("/admin/users")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to suspend user")
-      setIsSuspending(false)
-    }
-  }
-
-  const set = (patch: Partial<UserUpdate>) => setEditForm((prev) => ({ ...prev, ...patch }))
+  const {
+    user, isLoading, error,
+    isEditing, isSaving, isSuspending, showSuspendModal,
+    editForm, isSelf, canSuspend,
+    setIsEditing, setShowSuspendModal, setField,
+    handleSave, handleSuspend, cancelEdit,
+  } = useUser(id)
 
   if (isLoading) return <PageLoader />
   if (error && !user) return <PageError message={error} action={{ label: "Back to Users", onClick: () => router.push("/admin/users") }} />
   if (!user) return null
-
-  const isSelf = currentUser?.id === user.id
-  const canSuspend = user.status === "active" && user.role !== "head_admin" && !isSelf
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -121,9 +69,7 @@ export default function UserDetailPage({
                 {isSelf && <Badge variant="secondary">You</Badge>}
               </div>
               {!isEditing && (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  Edit
-                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit</Button>
               )}
             </CardHeader>
             <CardContent className="space-y-4">
@@ -131,68 +77,33 @@ export default function UserDetailPage({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-username">Username</Label>
-                    <Input
-                      id="edit-username"
-                      value={editForm.username ?? ""}
-                      onChange={(e) => set({ username: e.target.value })}
-                      disabled={isSaving}
-                    />
+                    <Input id="edit-username" value={editForm.username ?? ""} onChange={(e) => setField({ username: e.target.value })} disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-email">Email</Label>
-                    <Input
-                      id="edit-email"
-                      type="email"
-                      value={editForm.email ?? ""}
-                      onChange={(e) => set({ email: e.target.value })}
-                      disabled={isSaving}
-                    />
+                    <Input id="edit-email" type="email" value={editForm.email ?? ""} onChange={(e) => setField({ email: e.target.value })} disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-password">New Password</Label>
-                    <Input
-                      id="edit-password"
-                      type="password"
-                      placeholder="Leave blank to keep current password"
-                      onChange={(e) => set({ password: e.target.value || null })}
-                      disabled={isSaving}
-                    />
+                    <Input id="edit-password" type="password" placeholder="Leave blank to keep current password" onChange={(e) => setField({ password: e.target.value || null })} disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-role">Role</Label>
-                    <Select
-                      value={editForm.role ?? user.role}
-                      onValueChange={(v) => set({ role: v as UserRole })}
-                      disabled={isSaving || isSelf}
-                    >
-                      <SelectTrigger id="edit-role">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={editForm.role ?? user.role} onValueChange={(v) => setField({ role: v as UserRole })} disabled={isSaving || isSelf}>
+                      <SelectTrigger id="edit-role"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="head_admin">Head Admin</SelectItem>
                       </SelectContent>
                     </Select>
-                    {isSelf && (
-                      <p className="text-xs text-muted-foreground">You cannot change your own role.</p>
-                    )}
+                    {isSelf && <p className="text-xs text-muted-foreground">You cannot change your own role.</p>}
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button onClick={handleSave} disabled={isSaving}>
                       {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Save
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsEditing(false)
-                        setEditForm({ username: user.username, email: user.email, role: user.role })
-                        setError(null)
-                      }}
-                      disabled={isSaving}
-                    >
-                      Cancel
-                    </Button>
+                    <Button variant="outline" onClick={cancelEdit} disabled={isSaving}>Cancel</Button>
                   </div>
                 </div>
               ) : (
@@ -207,15 +118,11 @@ export default function UserDetailPage({
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Shield className="h-4 w-4 text-muted-foreground" />
-                    <Badge className={USER_ROLE_CONFIG[user.role].color}>
-                      {USER_ROLE_CONFIG[user.role].label}
-                    </Badge>
+                    <Badge className={USER_ROLE_CONFIG[user.role].color}>{USER_ROLE_CONFIG[user.role].label}</Badge>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge className={USER_STATUS_CONFIG[user.status].color}>
-                      {USER_STATUS_CONFIG[user.status].label}
-                    </Badge>
+                    <Badge className={USER_STATUS_CONFIG[user.status].color}>{USER_STATUS_CONFIG[user.status].label}</Badge>
                   </div>
                 </div>
               )}
@@ -253,13 +160,7 @@ export default function UserDetailPage({
                 <CardTitle className="text-sm">Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowSuspendModal(true)}
-                  disabled={isSuspending}
-                >
+                <Button variant="destructive" size="sm" className="w-full" onClick={() => setShowSuspendModal(true)} disabled={isSuspending}>
                   {isSuspending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Suspend Account
                 </Button>

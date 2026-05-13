@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -13,35 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createUser } from "@/lib/actions/user.action"
-import type { UserCreate, UserRole } from "@/lib/models/user.model"
+import { useCreateUser } from "@/hooks/use-create-user"
+import type { UserRole } from "@/lib/models/user.model"
 
 export default function CreateAdminPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState<UserCreate>({
-    username: "",
-    email: "",
-    password: "",
-    role: "admin",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const set = (patch: Partial<UserCreate>) => setFormData((prev) => ({ ...prev, ...patch }))
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      await createUser(formData)
-      router.push("/admin/users")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create admin")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const { formData, set, isSubmitting, error, handleSubmit } = useCreateUser()
 
   return (
     <div className="container mx-auto max-w-xl px-4 py-8">
@@ -67,7 +43,6 @@ export default function CreateAdminPage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -80,7 +55,6 @@ export default function CreateAdminPage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -93,7 +67,6 @@ export default function CreateAdminPage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select value={formData.role} onValueChange={(v) => set({ role: v as UserRole })} disabled={isSubmitting}>
@@ -106,7 +79,6 @@ export default function CreateAdminPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="flex justify-end gap-4 pt-2">
               <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
                 Cancel
