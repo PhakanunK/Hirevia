@@ -193,7 +193,7 @@ hirevia/
     │   ├── admin/              # Smart components (jobs-table, users-table, job-form-fields)
     │   └── ui/                 # shadcn/ui primitives
     ├── contexts/               # AdminContext — current user shared across dashboard
-    ├── hooks/                  # use-mobile, use-toast
+    ├── hooks/                  # Presenter layer — 15 domain hooks (use-careers, use-job, use-application, …)
     └── lib/
         ├── api.ts              # HTTP client (publicFetch, adminFetch)
         ├── actions/            # API call functions, one file per domain
@@ -221,23 +221,45 @@ Route → Service → Repository → Database
 | **Models** | SQLAlchemy ORM definitions, never exposed directly to the API |
 | **Schemas** | Pydantic models for request validation and response serialization |
 
-### Frontend
+### Frontend — MVP Pattern
 
-Strict layered architecture — pages never call the HTTP client directly:
+The frontend follows a strict MVP (Model–View–Presenter) pattern. Pages are thin Views; all logic lives in Presenter hooks.
 
 ```
-Page / Component → Action → API Client → Backend
+View (Page/Component) → Presenter (Hook) → Model (Action) → API Client → Backend
 ```
 
-| Layer | Location | Responsibility |
-|-------|----------|---------------|
-| **Pages** | `app/` | UI rendering, local state, user interaction |
-| **Actions** | `lib/actions/` | All API calls — one file per domain (`job`, `application`, `user`, `dashboard`, `public`) |
-| **API client** | `lib/api.ts` | Low-level HTTP client (`publicFetch`, `adminFetch`), token management |
-| **Models** | `lib/models/` | TypeScript interfaces split by domain (`job`, `application`, `user`, `dashboard`) |
-| **Utils** | `lib/utils/` | Pure helpers — `constants.ts` for config/status maps, `format.utils.ts` for display formatting |
+| MVP Role | Location | Responsibility |
+|----------|----------|---------------|
+| **Model** | `lib/actions/` + `lib/models/` | API calls and TypeScript interfaces, one file per domain |
+| **Presenter** | `hooks/` | All state, effects, derived values, and event handlers — one hook per page/feature |
+| **View** | `app/` pages + `components/` | Pure rendering only — calls one hook, maps returned data to JSX |
 
-Shared UI state (current logged-in user) is provided via `contexts/admin-context.tsx` to all dashboard pages through the layout.
+**Presenter hooks (15 total):**
+
+| Hook | Used by |
+|------|---------|
+| `use-featured-jobs` | Home page |
+| `use-careers` | Careers listing (filters, pagination, debounce) |
+| `use-career` | Job detail |
+| `use-apply` | Application form (upload + submit) |
+| `use-application-status` | Magic link status page |
+| `use-login` | Admin login |
+| `use-dashboard` | Dashboard stats |
+| `use-jobs-table` | Jobs list + archived (filters, pagination, archive action) |
+| `use-job` | Job detail (status change, archive) |
+| `use-job-form` | Create job / Edit job (shared form logic) |
+| `use-applications-table` | Applications list (filters, pagination) |
+| `use-application` | Application detail (pipeline actions, interview scheduling) |
+| `use-users-table` | Users list (filters, pagination) |
+| `use-user` | User detail (edit, suspend, self-protection) |
+| `use-create-user` | Create admin form |
+
+**Supporting layers:**
+- `lib/api.ts` — Low-level HTTP client (`publicFetch`, `adminFetch`), token management
+- `lib/utils/constants.ts` — Status color maps, page size config
+- `lib/utils/format.utils.ts` — Display formatters (salary, job type)
+- `contexts/admin-context.tsx` — Current user provided via React Context to all dashboard pages
 
 ---
 

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,10 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PageLoader, PageError } from "@/components/ui/page-states"
+import { useJobsTable } from "@/hooks/use-jobs-table"
 import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
-import { PAGE_SIZE_TABLE } from "@/lib/utils/constants"
-import { getJobs, archiveJob } from "@/lib/actions/job.action"
-import type { JobAdminResponse } from "@/lib/models/job.model"
 import { Search, Eye, Pencil, MoreHorizontal, Archive } from "lucide-react"
 
 interface JobsTableProps {
@@ -39,51 +36,16 @@ interface JobsTableProps {
 }
 
 export function JobsTable({ isArchived }: JobsTableProps) {
-  const [jobs, setJobs] = useState<JobAdminResponse[]>([])
-  const [totalPages, setTotalPages] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("")
-  const [typeFilter, setTypeFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [currentPage, setCurrentPage] = useState(1)
-
-  const fetchJobs = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const data = await getJobs({
-        page: currentPage,
-        page_size: PAGE_SIZE_TABLE,
-        is_archived: isArchived,
-        keyword: search || undefined,
-        job_type: typeFilter !== "all" ? typeFilter : undefined,
-        status: !isArchived && statusFilter !== "all" ? statusFilter : undefined,
-      })
-      setJobs(data.data)
-      setTotalPages(data.meta.total_pages)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load jobs")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [currentPage, search, typeFilter, statusFilter, isArchived])
-
-  useEffect(() => {
-    fetchJobs()
-  }, [fetchJobs])
-
-  const handleArchive = async (jobId: number) => {
-    try {
-      await archiveJob(jobId)
-      setJobs((prev) => prev.filter((j) => j.id !== jobId))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to archive job")
-    }
-  }
+  const {
+    jobs, isLoading, error,
+    search, typeFilter, statusFilter,
+    currentPage, totalPages,
+    setSearch, setTypeFilter, setStatusFilter, setCurrentPage,
+    handleArchive, retry,
+  } = useJobsTable(isArchived)
 
   if (isLoading) return <PageLoader />
-  if (error) return <PageError message={error} action={{ label: "Try Again", onClick: fetchJobs }} />
+  if (error) return <PageError message={error} action={{ label: "Try Again", onClick: retry }} />
 
   return (
     <>
@@ -94,12 +56,12 @@ export function JobsTable({ isArchived }: JobsTableProps) {
           <Input
             placeholder="Search by title"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
           />
         </div>
         <div className="flex gap-4">
-          <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setCurrentPage(1) }}>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -111,7 +73,7 @@ export function JobsTable({ isArchived }: JobsTableProps) {
             </SelectContent>
           </Select>
           {!isArchived && (
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1) }}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -174,16 +136,14 @@ export function JobsTable({ isArchived }: JobsTableProps) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/jobs/${job.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
+                            <Eye className="mr-2 h-4 w-4" />View
                           </Link>
                         </DropdownMenuItem>
                         {!isArchived && (
                           <>
                             <DropdownMenuItem asChild>
                               <Link href={`/admin/jobs/${job.id}/edit`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit
+                                <Pencil className="mr-2 h-4 w-4" />Edit
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -191,8 +151,7 @@ export function JobsTable({ isArchived }: JobsTableProps) {
                               className="text-destructive focus:text-destructive"
                               onClick={() => handleArchive(job.id)}
                             >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
+                              <Archive className="mr-2 h-4 w-4" />Archive
                             </DropdownMenuItem>
                           </>
                         )}

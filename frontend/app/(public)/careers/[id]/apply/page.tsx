@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { use } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPublicJob, uploadResume, submitApplication } from "@/lib/actions/public.action"
-import type { JobPublicResponse } from "@/lib/models/job.model"
+import { useCareer } from "@/hooks/use-career"
+import { useApply } from "@/hooks/use-apply"
 import { Upload, Loader2 } from "lucide-react"
 
 export default function ApplyPage({
@@ -15,69 +14,8 @@ export default function ApplyPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
-  const router = useRouter()
-  const [job, setJob] = useState<JobPublicResponse | null>(null)
-  const [isLoadingJob, setIsLoadingJob] = useState(true)
-  const [jobError, setJobError] = useState<string | null>(null)
-
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    resume: null as File | null,
-    portfolio: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStep, setSubmitStep] = useState<"uploading" | "submitting" | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchJob()
-  }, [id])
-
-  const fetchJob = async () => {
-    setIsLoadingJob(true)
-    setJobError(null)
-    try {
-      const data = await getPublicJob(id)
-      setJob(data)
-    } catch (err) {
-      setJobError(err instanceof Error ? err.message : "Failed to load job")
-    } finally {
-      setIsLoadingJob(false)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!formData.resume) return
-    setIsSubmitting(true)
-    setSubmitError(null)
-
-    try {
-      setSubmitStep("uploading")
-      const { url: resume_url } = await uploadResume(formData.resume)
-
-      setSubmitStep("submitting")
-      const res = await submitApplication({
-        job_id: parseInt(id),
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        resume_url,
-        portfolio_url: formData.portfolio || undefined,
-      })
-
-      router.push(`/careers/${id}/apply/success?token=${res.tracking_token}`)
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit application")
-    } finally {
-      setIsSubmitting(false)
-      setSubmitStep(null)
-    }
-  }
+  const { job, isLoading: isLoadingJob, error: jobError, retry: retryJob } = useCareer(id)
+  const { formData, setFormData, isSubmitting, submitStep, error: submitError, handleSubmit } = useApply(id)
 
   if (isLoadingJob) {
     return (
@@ -93,7 +31,7 @@ export default function ApplyPage({
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8 text-center">
         <p className="mb-4 text-destructive">{jobError || "Job not found"}</p>
-        <Button onClick={fetchJob}>Try Again</Button>
+        <Button onClick={retryJob}>Try Again</Button>
       </div>
     )
   }

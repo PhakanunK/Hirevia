@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,72 +25,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PageLoader, PageError } from "@/components/ui/page-states"
-import { USER_STATUS_CONFIG, USER_ROLE_CONFIG, PAGE_SIZE_TABLE } from "@/lib/utils/constants"
-import { getUsers } from "@/lib/actions/user.action"
-import type { UserResponse } from "@/lib/models/user.model"
+import { useUsersTable } from "@/hooks/use-users-table"
+import { USER_STATUS_CONFIG, USER_ROLE_CONFIG } from "@/lib/utils/constants"
 import { Eye, MoreHorizontal } from "lucide-react"
 
 export function UsersTable() {
-  const [users, setUsers] = useState<UserResponse[]>([])
-  const [totalPages, setTotalPages] = useState(1)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [roleFilter, setRoleFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [currentPage, setCurrentPage] = useState(1)
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const data = await getUsers({
-        page: currentPage,
-        page_size: PAGE_SIZE_TABLE,
-        role: roleFilter !== "all" ? roleFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-      })
-      setUsers(data.data)
-      setTotalPages(data.meta.total_pages)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load users")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [currentPage, roleFilter, statusFilter])
-
-  useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+  const {
+    users, isLoading, error,
+    roleFilter, statusFilter,
+    currentPage, totalPages,
+    setRoleFilter, setStatusFilter, setCurrentPage,
+    retry,
+  } = useUsersTable()
 
   if (isLoading) return <PageLoader />
-  if (error) return <PageError message={error} action={{ label: "Try Again", onClick: fetchUsers }} />
+  if (error) return <PageError message={error} action={{ label: "Try Again", onClick: retry }} />
 
   return (
     <>
       {/* Filters */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex gap-4">
-          <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setCurrentPage(1) }}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="head_admin">Head Admin</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1) }}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="mb-6 flex gap-4">
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="head_admin">Head Admin</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -129,9 +102,7 @@ export function UsersTable() {
                       {USER_STATUS_CONFIG[user.status].label}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -142,8 +113,7 @@ export function UsersTable() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/users/${user.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
+                            <Eye className="mr-2 h-4 w-4" />View
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>

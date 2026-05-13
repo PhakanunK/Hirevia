@@ -1,25 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getPublicJobs } from "@/lib/actions/public.action"
+import { useFeaturedJobs } from "@/hooks/use-featured-jobs"
 import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
-import type { JobPublicResponse } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function HomePage() {
-  const [featuredJobs, setFeaturedJobs] = useState<JobPublicResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    getPublicJobs({ page: 1, page_size: 3 })
-      .then((res) => setFeaturedJobs(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [])
+  const { jobs, isLoading } = useFeaturedJobs()
 
   return (
     <div>
@@ -48,21 +38,19 @@ export default function HomePage() {
       {/* Featured Jobs Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center text-2xl font-bold">
-            We&apos;re Hiring
-          </h2>
+          <h2 className="mb-8 text-center text-2xl font-bold">We&apos;re Hiring</h2>
 
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : featuredJobs.length === 0 ? (
+          ) : jobs.length === 0 ? (
             <p className="text-center text-muted-foreground">
               No open positions at the moment. Check back soon!
             </p>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredJobs.map((job) => (
+              {jobs.map((job) => (
                 <Card key={job.id} className="flex flex-col">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">{job.title}</CardTitle>

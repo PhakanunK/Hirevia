@@ -1,5 +1,5 @@
 import { adminFetch } from "@/lib/api"
-import type { UserResponse, UserCreate, UserUpdate, PaginatedResponse } from "@/lib/models/user.model"
+import type { UserResponse, UserCreate, UserUpdate, UserLogin, Token, PaginatedResponse } from "@/lib/models/user.model"
 import { PAGE_SIZE_TABLE } from "@/lib/utils/constants"
 
 export interface GetUsersParams {
@@ -33,3 +33,6 @@ export const updateUser = (id: string | number, data: UserUpdate) =>
 
 export const suspendUser = (id: string | number) =>
   adminFetch(`/users/${id}`, { method: "DELETE" })
+
+export const login = (data: UserLogin) =>
+  adminFetch<Token>("/auth/login", { method: "POST", body: JSON.stringify(data) })

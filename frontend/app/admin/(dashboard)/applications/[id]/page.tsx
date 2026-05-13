@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { use } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,10 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { APPLICATION_STATUS_CONFIG, NEXT_APPLICATION_STATUS } from "@/lib/utils/constants"
-import { getApplication, updateApplicationStatus, updateInterviewDate } from "@/lib/actions/application.action"
-import { getJob } from "@/lib/actions/job.action"
-import type { ApplicationResponse, ApplicationStatus } from "@/lib/models/application.model"
+import { PageLoader, PageError } from "@/components/ui/page-states"
+import { useApplication } from "@/hooks/use-application"
+import { APPLICATION_STATUS_CONFIG } from "@/lib/utils/constants"
+import type { ApplicationStatus } from "@/lib/models/application.model"
 import { Mail, Phone, FileText, Globe, Calendar, Loader2, AlertCircle } from "lucide-react"
 
 export default function ApplicationDetailPage({
@@ -37,161 +38,30 @@ export default function ApplicationDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const router = useRouter()
+  const {
+    application, jobTitle, isLoading, error, isUpdating,
+    currentStatus, scheduledInterviewDate, nextStatus, canReject,
+    showInterviewModal, setShowInterviewModal,
+    showEditInterviewModal, setShowEditInterviewModal,
+    showConfirmModal, setShowConfirmModal,
+    showRejectModal, setShowRejectModal,
+    pendingStatus,
+    interviewDateInput, setInterviewDateInput,
+    interviewTimeInput, setInterviewTimeInput,
+    handleMoveToNextStage, confirmStatusChange, confirmInterview,
+    openEditInterviewModal, confirmEditInterview, confirmReject,
+  } = useApplication(id)
 
-  const [application, setApplication] = useState<ApplicationResponse | null>(null)
-  const [jobTitle, setJobTitle] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isUpdating, setIsUpdating] = useState(false)
-
-  const [currentStatus, setCurrentStatus] = useState<ApplicationStatus>("applied")
-  const [scheduledInterviewDate, setScheduledInterviewDate] = useState<string | null>(null)
-  const [interviewDateInput, setInterviewDateInput] = useState("")
-  const [interviewTimeInput, setInterviewTimeInput] = useState("")
-
-  const [showInterviewModal, setShowInterviewModal] = useState(false)
-  const [showEditInterviewModal, setShowEditInterviewModal] = useState(false)
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [showRejectModal, setShowRejectModal] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null)
-
-  useEffect(() => {
-    const fetchApplication = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const data = await getApplication(id)
-        setApplication(data)
-        setCurrentStatus(data.status)
-        setScheduledInterviewDate(data.interview_date || null)
-        try {
-          const job = await getJob(data.job_id)
-          setJobTitle(job.title)
-        } catch {
-          // non-critical, falls back to job_id
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchApplication()
-  }, [id])
-
-  const handleUpdateStatus = async (newStatus: ApplicationStatus, interviewDate?: string) => {
-    setIsUpdating(true)
-    try {
-      await updateApplicationStatus(id, {
-        status: newStatus,
-        ...(interviewDate && { interview_date: interviewDate }),
-      })
-      setCurrentStatus(newStatus)
-      if (interviewDate) setScheduledInterviewDate(interviewDate)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status")
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const handleUpdateInterviewDate = async (interviewDate: string) => {
-    setIsUpdating(true)
-    try {
-      await updateInterviewDate(id, { interview_date: interviewDate })
-      setScheduledInterviewDate(interviewDate)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update interview date")
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    )
-  }
-
-  if (error && !application) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center gap-4 py-12">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!application) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-muted-foreground">Application not found</p>
-      </div>
-    )
-  }
-
-  const handleMoveToNextStage = () => {
-    const next = NEXT_APPLICATION_STATUS[currentStatus]
-    if (!next) return
-    if (next === "interview") {
-      setShowInterviewModal(true)
-    } else {
-      setPendingStatus(next)
-      setShowConfirmModal(true)
-    }
-  }
-
-  const confirmStatusChange = async () => {
-    if (pendingStatus) {
-      await handleUpdateStatus(pendingStatus)
-      setPendingStatus(null)
-    }
-    setShowConfirmModal(false)
-  }
-
-  const confirmInterview = async () => {
-    if (interviewDateInput && interviewTimeInput) {
-      const dateTime = `${interviewDateInput}T${interviewTimeInput}:00`
-      await handleUpdateStatus("interview", dateTime)
-      setShowInterviewModal(false)
-      setInterviewDateInput("")
-      setInterviewTimeInput("")
-    }
-  }
-
-  const openEditInterviewModal = () => {
-    if (scheduledInterviewDate) {
-      const date = new Date(scheduledInterviewDate)
-      setInterviewDateInput(date.toISOString().split("T")[0])
-      setInterviewTimeInput(date.toTimeString().slice(0, 5))
-    }
-    setShowEditInterviewModal(true)
-  }
-
-  const confirmEditInterview = async () => {
-    if (interviewDateInput && interviewTimeInput) {
-      const dateTime = `${interviewDateInput}T${interviewTimeInput}:00`
-      await handleUpdateInterviewDate(dateTime)
-      setShowEditInterviewModal(false)
-      setInterviewDateInput("")
-      setInterviewTimeInput("")
-    }
-  }
-
-  const confirmReject = async () => {
-    await handleUpdateStatus("rejected")
-    setShowRejectModal(false)
-  }
-
-  const nextStatus = NEXT_APPLICATION_STATUS[currentStatus]
-  const canReject = currentStatus !== "rejected" && currentStatus !== "offer"
+  if (isLoading) return <PageLoader />
+  if (error && !application) return (
+    <PageError message={error} action={{ label: "Retry", onClick: () => window.location.reload() }} />
+  )
+  if (!application) return (
+    <div className="container mx-auto px-4 py-8 text-center">
+      <p className="text-muted-foreground">Application not found</p>
+    </div>
+  )
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -199,7 +69,7 @@ export default function ApplicationDetailPage({
 
       {error && (
         <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
+          <AlertCircle className="mr-2 inline h-4 w-4" />{error}
         </div>
       )}
 
@@ -224,17 +94,8 @@ export default function ApplicationDetailPage({
                     <Calendar className="h-4 w-4 text-purple-600" />
                     <span className="text-sm font-medium text-purple-900">
                       Interview scheduled:{" "}
-                      {new Date(scheduledInterviewDate).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}{" "}
-                      at{" "}
-                      {new Date(scheduledInterviewDate).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(scheduledInterviewDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}{" "}
+                      at {new Date(scheduledInterviewDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                   <Button variant="outline" size="sm" onClick={openEditInterviewModal} disabled={isUpdating}>
@@ -244,16 +105,12 @@ export default function ApplicationDetailPage({
               )}
 
               <div className="space-y-2">
-                <p className="text-lg font-medium">
-                  {application.first_name} {application.last_name}
-                </p>
+                <p className="text-lg font-medium">{application.first_name} {application.last_name}</p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{application.email}</span>
+                  <Mail className="h-4 w-4" /><span>{application.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  <span>{application.phone}</span>
+                  <Phone className="h-4 w-4" /><span>{application.phone}</span>
                 </div>
               </div>
 
@@ -326,9 +183,7 @@ export default function ApplicationDetailPage({
                 <a href={`mailto:${application.email}`}>Send Email</a>
               </Button>
               <Button variant="outline" size="sm" className="w-full" asChild>
-                <a href={application.resume_url} target="_blank" rel="noopener noreferrer">
-                  Download Resume
-                </a>
+                <a href={application.resume_url} target="_blank" rel="noopener noreferrer">Download Resume</a>
               </Button>
             </CardContent>
           </Card>
@@ -340,9 +195,7 @@ export default function ApplicationDetailPage({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Interview Time</DialogTitle>
-            <DialogDescription>
-              Update the interview date and time for {application.first_name} {application.last_name}.
-            </DialogDescription>
+            <DialogDescription>Update the interview date and time for {application.first_name} {application.last_name}.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -372,9 +225,7 @@ export default function ApplicationDetailPage({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Schedule Interview</DialogTitle>
-            <DialogDescription>
-              Select a date and time for the interview with {application.first_name} {application.last_name}.
-            </DialogDescription>
+            <DialogDescription>Select a date and time for the interview with {application.first_name} {application.last_name}.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -399,7 +250,7 @@ export default function ApplicationDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Status Change Modal */}
+      {/* Confirm Status Change */}
       <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
