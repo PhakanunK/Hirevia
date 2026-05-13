@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,30 +15,37 @@ import {
 } from "@/components/ui/select"
 import { publicFetch } from "@/lib/api"
 import { formatJobType, formatSalaryCompact } from "@/lib/format"
-import type { Job } from "@/lib/types"
-import { Search, Loader2 } from "lucide-react"
+import type { JobPublicResponse, PaginatedResponse, PaginationMeta } from "@/lib/types"
+import { PAGE_SIZE_CARD } from "@/lib/types"
+import { Search, Loader2, AlertCircle } from "lucide-react"
 
-const JOBS_PER_PAGE = 6
+// value = "salary_min:salary_max" sent to API (empty string = no bound)
+const SALARY_RANGES = [
+  { value: "all", label: "Any Salary" },
+  { value: "0:15000", label: "฿0 – ฿15K" },
+  { value: "15000:30000", label: "฿15K – ฿30K" },
+  { value: "30000:50000", label: "฿30K – ฿50K" },
+  { value: "50000:80000", label: "฿50K – ฿80K" },
+  { value: "80000:", label: "฿80K+" },
+]
 
-function JobCard({ job }: { job: Job }) {
+function JobCard({ job }: { job: JobPublicResponse }) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="text-base text-primary">{job.title}</CardTitle>
           {job.urgent && (
-            <Badge variant="destructive" className="ml-2 shrink-0">
-              Urgent
-            </Badge>
+            <Badge variant="destructive" className="ml-2 shrink-0">Urgent</Badge>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>Type: {formatJobType(job.type)}</span>
+          <span>{formatJobType(job.job_type)}</span>
           <span className="hidden sm:inline">|</span>
-          <span>Salary: {formatSalaryCompact(job.salary_min, job.salary_max)}</span>
+          <span>{formatSalaryCompact(job.min_salary, job.max_salary ?? undefined)}</span>
         </div>
         <div className="text-sm text-muted-foreground">
-          Open positions: {job.headcount}
+          {job.headcount} open position{job.headcount !== 1 ? "s" : ""}
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
@@ -54,95 +61,54 @@ function JobCard({ job }: { job: Job }) {
 }
 
 export default function CareersPage() {
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobs, setJobs] = useState<JobPublicResponse[]>([])
+  const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
   const [search, setSearch] = useState("")
-  const [salaryFilter, setSalaryFilter] = useState<string>("all")
-  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [salaryRange, setSalaryRange] = useState("all")
+  const [typeFilter, setTypeFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    fetchJobs()
-  }, [])
+    const timer = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(timer)
+  }, [search])
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await publicFetch<Job[]>('/jobs')
-      // Only show open jobs to public
-      setJobs(data.filter((job) => job.status === "open"))
+      const params: Record<string, string> = {
+        page: String(currentPage),
+        page_size: String(PAGE_SIZE_CARD),
+      }
+      if (typeFilter !== "all") params.job_type = typeFilter
+      if (debouncedSearch) params.keyword = debouncedSearch
+      if (salaryRange !== "all") {
+        const [min, max] = salaryRange.split(":")
+        if (min) params.salary_min = min
+        if (max) params.salary_max = max
+      }
+
+      const res = await publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", { params })
+      setJobs(res.data)
+      setMeta(res.meta)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load jobs')
+      setError(err instanceof Error ? err.message : "Failed to load jobs")
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [currentPage, typeFilter, debouncedSearch, salaryRange])
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      // Search filter
-      if (
-        search &&
-        !job.title.toLowerCase().includes(search.toLowerCase()) &&
-        !job.description.toLowerCase().includes(search.toLowerCase())
-      ) {
-        return false
-      }
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
 
-      // Salary filter - check if job salary overlaps with selected range
-      if (salaryFilter !== "all") {
-        const [filterMin, filterMax] = salaryFilter.split("-").map(Number)
-        const jobMax = job.salary_max ?? job.salary_min
-        // Job overlaps if job_min <= filter_max AND job_max >= filter_min
-        const overlaps = filterMax 
-          ? job.salary_min <= filterMax && jobMax >= filterMin
-          : jobMax >= filterMin // For "80000+" case (no max)
-        if (!overlaps) return false
-      }
-
-      // Type filter
-      if (typeFilter !== "all" && job.type !== typeFilter) {
-        return false
-      }
-
-      return true
-    })
-  }, [jobs, search, salaryFilter, typeFilter])
-
-  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE)
-  const paginatedJobs = filteredJobs.slice(
-    (currentPage - 1) * JOBS_PER_PAGE,
-    currentPage * JOBS_PER_PAGE
-  )
-
-  const handleFilterChange = () => {
-    setCurrentPage(1)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-8 text-center text-3xl font-bold">Careers</h1>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-8 text-center text-3xl font-bold">Careers</h1>
-        <div className="py-12 text-center">
-          <p className="mb-4 text-destructive">{error}</p>
-          <Button onClick={fetchJobs}>Try Again</Button>
-        </div>
-      </div>
-    )
-  }
+  const resetPage = () => setCurrentPage(1)
+  const totalPages = meta?.total_pages ?? 1
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -155,47 +121,28 @@ export default function CareersPage() {
           <Input
             placeholder="Search for position"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              handleFilterChange()
-            }}
+            onChange={(e) => { setSearch(e.target.value); resetPage() }}
             className="pl-10"
           />
         </div>
         <div className="flex gap-4">
-          <Select
-            value={salaryFilter}
-            onValueChange={(value) => {
-              setSalaryFilter(value)
-              handleFilterChange()
-            }}
-          >
+          <Select value={salaryRange} onValueChange={(v) => { setSalaryRange(v); resetPage() }}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Salary" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Any</SelectItem>
-              <SelectItem value="0-15000">฿0 - ฿15K</SelectItem>
-              <SelectItem value="15000-30000">฿15K - ฿30K</SelectItem>
-              <SelectItem value="30000-50000">฿30K - ฿50K</SelectItem>
-              <SelectItem value="50000-80000">฿50K - ฿80K</SelectItem>
-              <SelectItem value="80000-">฿80K+</SelectItem>
+              {SALARY_RANGES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select
-            value={typeFilter}
-            onValueChange={(value) => {
-              setTypeFilter(value)
-              handleFilterChange()
-            }}
-          >
+          <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); resetPage() }}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="full_time">Full Time</SelectItem>
-              <SelectItem value="part_time">Part Time</SelectItem>
               <SelectItem value="contract">Contract</SelectItem>
               <SelectItem value="internship">Internship</SelectItem>
             </SelectContent>
@@ -203,16 +150,26 @@ export default function CareersPage() {
         </div>
       </div>
 
-      {/* Job Cards */}
-      {paginatedJobs.length > 0 ? (
-        <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {paginatedJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : (
+      ) : error ? (
+        <div className="flex flex-col items-center gap-4 py-12">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={fetchJobs}>Try Again</Button>
+        </div>
+      ) : jobs.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
           No jobs found matching your criteria.
+        </div>
+      ) : (
+        <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {jobs.map((job) => (
+            <JobCard key={job.id} job={job} />
+          ))}
         </div>
       )}
 
@@ -223,7 +180,7 @@ export default function CareersPage() {
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || isLoading}
           >
             Previous
           </Button>
@@ -233,6 +190,7 @@ export default function CareersPage() {
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
               onClick={() => setCurrentPage(page)}
+              disabled={isLoading}
             >
               {page}
             </Button>
@@ -241,7 +199,7 @@ export default function CareersPage() {
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || isLoading}
           >
             Next
           </Button>

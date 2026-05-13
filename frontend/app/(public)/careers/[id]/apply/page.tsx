@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { publicFetch, publicFetchFormData } from "@/lib/api"
-import type { Job } from "@/lib/types"
+import type { JobPublicResponse, ApplicationSubmitResponse } from "@/lib/types"
 import { Upload, Loader2 } from "lucide-react"
 
 interface UploadResponse {
-  resume_url: string
+  url: string
 }
 
 export default function ApplyPage({
@@ -20,7 +20,7 @@ export default function ApplyPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
-  const [job, setJob] = useState<Job | null>(null)
+  const [job, setJob] = useState<JobPublicResponse | null>(null)
   const [isLoadingJob, setIsLoadingJob] = useState(true)
   const [jobError, setJobError] = useState<string | null>(null)
 
@@ -33,6 +33,7 @@ export default function ApplyPage({
     portfolio: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStep, setSubmitStep] = useState<"uploading" | "submitting" | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -43,54 +44,49 @@ export default function ApplyPage({
     setIsLoadingJob(true)
     setJobError(null)
     try {
-      const data = await publicFetch<Job>(`/jobs/${id}`)
+      const data = await publicFetch<JobPublicResponse>(`/jobs/${id}`)
       setJob(data)
     } catch (err) {
-      setJobError(err instanceof Error ? err.message : 'Failed to load job')
+      setJobError(err instanceof Error ? err.message : "Failed to load job")
     } finally {
       setIsLoadingJob(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!formData.resume) return
     setIsSubmitting(true)
     setSubmitError(null)
 
     try {
-      // Step 1: Upload resume to get URL
-      if (!formData.resume) {
-        throw new Error('Please select a resume file')
-      }
+      // Step 1: upload resume, get URL
+      setSubmitStep("uploading")
+      const uploadForm = new FormData()
+      uploadForm.append("file", formData.resume)
+      const { url: resume_url } = await publicFetchFormData<UploadResponse>("/upload/resume", uploadForm)
 
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', formData.resume)
-
-      const uploadResponse = await publicFetchFormData<UploadResponse>(
-        '/upload/resume',
-        uploadFormData
-      )
-
-      // Step 2: Submit application with resume URL
-      await publicFetch('/apply', {
-        method: 'POST',
+      // Step 2: submit application with the returned URL
+      setSubmitStep("submitting")
+      const res = await publicFetch<ApplicationSubmitResponse>("/apply", {
+        method: "POST",
         body: JSON.stringify({
-          job_id: id,
+          job_id: parseInt(id),
           first_name: formData.firstName,
           last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          resume_url: uploadResponse.resume_url,
+          resume_url,
           portfolio_url: formData.portfolio || undefined,
         }),
       })
 
-      // Redirect to success page
-      router.push(`/careers/${id}/apply/success`)
+      router.push(`/careers/${id}/apply/success?token=${res.tracking_token}`)
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to submit application')
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit application")
     } finally {
       setIsSubmitting(false)
+      setSubmitStep(null)
     }
   }
 
@@ -107,7 +103,7 @@ export default function ApplyPage({
   if (jobError || !job) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8 text-center">
-        <p className="mb-4 text-destructive">{jobError || 'Job not found'}</p>
+        <p className="mb-4 text-destructive">{jobError || "Job not found"}</p>
         <Button onClick={fetchJob}>Try Again</Button>
       </div>
     )
@@ -123,10 +119,8 @@ export default function ApplyPage({
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-2 text-center text-2xl font-bold">
-        Submit your application
-      </h1>
-      <p className="mb-8 text-center text-primary font-medium">{job.title}</p>
+      <h1 className="mb-2 text-center text-2xl font-bold">Submit your application</h1>
+      <p className="mb-8 text-center font-medium text-primary">{job.title}</p>
 
       {submitError && (
         <div className="mb-6 rounded-md bg-destructive/10 p-4 text-center text-destructive">
@@ -142,9 +136,7 @@ export default function ApplyPage({
               id="firstName"
               placeholder="First name"
               value={formData.firstName}
-              onChange={(e) =>
-                setFormData({ ...formData, firstName: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               required
               disabled={isSubmitting}
             />
@@ -155,9 +147,7 @@ export default function ApplyPage({
               id="lastName"
               placeholder="Last name"
               value={formData.lastName}
-              onChange={(e) =>
-                setFormData({ ...formData, lastName: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               required
               disabled={isSubmitting}
             />
@@ -172,9 +162,7 @@ export default function ApplyPage({
               type="email"
               placeholder="Email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               disabled={isSubmitting}
             />
@@ -186,9 +174,7 @@ export default function ApplyPage({
               type="tel"
               placeholder="Phone number"
               value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               required
               disabled={isSubmitting}
             />
@@ -203,12 +189,7 @@ export default function ApplyPage({
                 id="resume"
                 type="file"
                 accept=".pdf,.doc,.docx"
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    resume: e.target.files?.[0] || null,
-                  })
-                }
+                onChange={(e) => setFormData({ ...formData, resume: e.target.files?.[0] || null })}
                 className="cursor-pointer"
                 required
                 disabled={isSubmitting}
@@ -217,15 +198,13 @@ export default function ApplyPage({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="portfolio">Portfolio (Optional)</Label>
+            <Label htmlFor="portfolio">Portfolio (optional)</Label>
             <Input
               id="portfolio"
               type="url"
-              placeholder="Portfolio"
+              placeholder="https://..."
               value={formData.portfolio}
-              onChange={(e) =>
-                setFormData({ ...formData, portfolio: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, portfolio: e.target.value })}
               disabled={isSubmitting}
             />
           </div>
@@ -236,7 +215,7 @@ export default function ApplyPage({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                {submitStep === "uploading" ? "Uploading resume..." : "Submitting..."}
               </>
             ) : (
               "Submit"

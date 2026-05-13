@@ -40,7 +40,8 @@ export const publicFetch = async <T = unknown>(
   })
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.detail || body.message || `${response.status} ${response.statusText}`)
   }
 
   return response.json()
@@ -79,7 +80,8 @@ export const adminFetch = async <T = unknown>(
   }
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.detail || body.message || `${response.status} ${response.statusText}`)
   }
 
   return response.json()
