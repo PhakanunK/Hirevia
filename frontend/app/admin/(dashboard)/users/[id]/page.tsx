@@ -28,6 +28,7 @@ import { PageLoader, PageError } from "@/components/ui/page-states"
 import { USER_STATUS_CONFIG, USER_ROLE_CONFIG } from "@/lib/utils/constants"
 import { getUser, updateUser, suspendUser } from "@/lib/actions/user.action"
 import type { UserResponse, UserUpdate, UserRole } from "@/lib/models/user.model"
+import { useAdminContext } from "@/contexts/admin-context"
 import { Loader2, Mail, User, Shield, Calendar } from "lucide-react"
 
 export default function UserDetailPage({
@@ -37,6 +38,7 @@ export default function UserDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const { currentUser } = useAdminContext()
 
   const [user, setUser] = useState<UserResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -64,7 +66,12 @@ export default function UserDetailPage({
     setIsSaving(true)
     setError(null)
     try {
-      const updated = await updateUser(id, editForm)
+      const patch: UserUpdate = {}
+      if (editForm.username !== user.username) patch.username = editForm.username
+      if (editForm.email !== user.email) patch.email = editForm.email
+      if (!isSelf && editForm.role !== user.role) patch.role = editForm.role
+      if (editForm.password) patch.password = editForm.password
+      const updated = await updateUser(id, patch)
       setUser(updated)
       setIsEditing(false)
     } catch (err) {
@@ -91,6 +98,9 @@ export default function UserDetailPage({
   if (error && !user) return <PageError message={error} action={{ label: "Back to Users", onClick: () => router.push("/admin/users") }} />
   if (!user) return null
 
+  const isSelf = currentUser?.id === user.id
+  const canSuspend = user.status === "active" && user.role !== "head_admin" && !isSelf
+
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-8 text-2xl font-bold">Admin User</h1>
@@ -106,7 +116,10 @@ export default function UserDetailPage({
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{user.username}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>{user.username}</CardTitle>
+                {isSelf && <Badge variant="secondary">You</Badge>}
+              </div>
               {!isEditing && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                   Edit
@@ -150,7 +163,7 @@ export default function UserDetailPage({
                     <Select
                       value={editForm.role ?? user.role}
                       onValueChange={(v) => set({ role: v as UserRole })}
-                      disabled={isSaving}
+                      disabled={isSaving || isSelf}
                     >
                       <SelectTrigger id="edit-role">
                         <SelectValue />
@@ -160,6 +173,9 @@ export default function UserDetailPage({
                         <SelectItem value="head_admin">Head Admin</SelectItem>
                       </SelectContent>
                     </Select>
+                    {isSelf && (
+                      <p className="text-xs text-muted-foreground">You cannot change your own role.</p>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button onClick={handleSave} disabled={isSaving}>
@@ -231,7 +247,7 @@ export default function UserDetailPage({
             </CardContent>
           </Card>
 
-          {user.status === "active" && user.role !== "head_admin" && (
+          {canSuspend && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Actions</CardTitle>

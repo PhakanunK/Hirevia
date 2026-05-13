@@ -5,17 +5,15 @@ import { PAGE_SIZE_TABLE } from "@/lib/utils/constants"
 export interface GetUsersParams {
   page?: number
   page_size?: number
-  keyword?: string
   role?: string
   status?: string
 }
 
-export const getUsers = ({ page = 1, page_size = PAGE_SIZE_TABLE, keyword, role, status }: GetUsersParams = {}) => {
+export const getUsers = ({ page = 1, page_size = PAGE_SIZE_TABLE, role, status }: GetUsersParams = {}) => {
   const params: Record<string, string> = {
     page: String(page),
     page_size: String(page_size),
   }
-  if (keyword) params.keyword = keyword
   if (role) params.role = role
   if (status) params.status = status
   return adminFetch<PaginatedResponse<UserResponse>>("/users", { params })
