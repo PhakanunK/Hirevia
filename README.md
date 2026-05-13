@@ -142,6 +142,8 @@ cp frontend/.env.example frontend/.env
 Edit `frontend/.env`:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_PAGE_SIZE_CARD=6
+NEXT_PUBLIC_PAGE_SIZE_TABLE=10
 ```
 
 ### 5. Run with Docker
