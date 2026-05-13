@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { adminFetch } from "@/lib/api"
-import type { Job } from "@/lib/types"
+import type { JobAdminResponse, JobCreate } from "@/lib/types"
 
 export default function CreateJobPage() {
   const router = useRouter()
@@ -24,14 +24,14 @@ export default function CreateJobPage() {
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: "",
-    type: "full_time",
+    job_type: "full_time",      // was "type"
     description: "",
     requirements: "",
     headcount: 1,
-    salary_min: "",
-    salary_max: "",
+    min_salary: "",             // was "salary_min"
+    max_salary: "",             // was "salary_max"
     urgent: false,
-    status: "draft",
+    // NO status — backend always forces draft on create
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,19 +40,18 @@ export default function CreateJobPage() {
     setError(null)
 
     try {
-      const payload = {
+      const payload: JobCreate = {
         title: formData.title,
-        type: formData.type,
+        job_type: formData.job_type as JobCreate["job_type"],
         description: formData.description,
-        requirements: formData.requirements.split("\n").filter((r) => r.trim()),
+        requirements: formData.requirements, // plain string, NOT split into array
         headcount: formData.headcount,
-        salary_min: parseInt(formData.salary_min),
-        salary_max: formData.salary_max ? parseInt(formData.salary_max) : undefined,
+        min_salary: parseInt(formData.min_salary),
+        max_salary: formData.max_salary ? parseInt(formData.max_salary) : null,
         urgent: formData.urgent,
-        status: formData.status,
       }
 
-      await adminFetch<Job>("/jobs", {
+      await adminFetch<JobAdminResponse>("/jobs", {
         method: "POST",
         body: JSON.stringify(payload),
       })
@@ -92,11 +91,11 @@ export default function CreateJobPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="job_type">Type</Label>
                 <Select
-                  value={formData.type}
+                  value={formData.job_type}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, type: value })
+                    setFormData({ ...formData, job_type: value })
                   }
                 >
                   <SelectTrigger>
@@ -104,7 +103,6 @@ export default function CreateJobPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="full_time">Full Time</SelectItem>
-                    <SelectItem value="part_time">Part Time</SelectItem>
                     <SelectItem value="contract">Contract</SelectItem>
                     <SelectItem value="internship">Internship</SelectItem>
                   </SelectContent>
@@ -127,10 +125,10 @@ export default function CreateJobPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="requirements">Requirements (one per line)</Label>
+              <Label htmlFor="requirements">Requirements</Label>
               <Textarea
                 id="requirements"
-                placeholder="Enter requirements, one per line..."
+                placeholder="Enter job requirements..."
                 value={formData.requirements}
                 onChange={(e) =>
                   setFormData({ ...formData, requirements: e.target.value })
@@ -171,50 +169,29 @@ export default function CreateJobPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="salary_min">Salary Min</Label>
+                <Label htmlFor="min_salary">Salary Min</Label>
                 <Input
-                  id="salary_min"
+                  id="min_salary"
                   type="number"
                   placeholder="e.g. 50000"
-                  value={formData.salary_min}
+                  value={formData.min_salary}
                   onChange={(e) =>
-                    setFormData({ ...formData, salary_min: e.target.value })
+                    setFormData({ ...formData, min_salary: e.target.value })
                   }
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="salary_max">Salary Max</Label>
+                <Label htmlFor="max_salary">Salary Max (optional)</Label>
                 <Input
-                  id="salary_max"
+                  id="max_salary"
                   type="number"
                   placeholder="e.g. 80000"
-                  value={formData.salary_max}
+                  value={formData.max_salary}
                   onChange={(e) =>
-                    setFormData({ ...formData, salary_max: e.target.value })
+                    setFormData({ ...formData, max_salary: e.target.value })
                   }
-                  required
                 />
-              </div>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 

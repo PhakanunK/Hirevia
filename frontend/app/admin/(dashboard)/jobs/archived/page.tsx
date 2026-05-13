@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,9 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { mockArchivedJobs } from "@/lib/mock-data"
+import { adminFetch } from "@/lib/api"
 import { formatJobType, formatSalaryCompact } from "@/lib/format"
-import { Search, Eye, MoreHorizontal, ArrowLeft } from "lucide-react"
+import type { JobAdminResponse, PaginatedResponse } from "@/lib/types"
+import { PAGE_SIZE_TABLE } from "@/lib/types"
+import { Search, Eye, MoreHorizontal, ArrowLeft, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,23 +33,60 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function ArchivedJobsPage() {
+  const [jobs, setJobs] = useState<JobAdminResponse[]>([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
 
-  const filteredJobs = useMemo(() => {
-    return mockArchivedJobs.filter((job) => {
-      if (
-        search &&
-        !job.title.toLowerCase().includes(search.toLowerCase())
-      ) {
-        return false
-      }
-      if (typeFilter !== "all" && job.type !== typeFilter) {
-        return false
-      }
-      return true
-    })
-  }, [search, typeFilter])
+  const fetchJobs = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await adminFetch<PaginatedResponse<JobAdminResponse>>("/jobs", {
+        params: {
+          page: String(currentPage),
+          page_size: String(PAGE_SIZE_TABLE),
+          is_archived: "true",
+          ...(search && { title: search }),
+          ...(typeFilter !== "all" && { job_type: typeFilter }),
+        },
+      })
+      setJobs(data.data)
+      setTotalPages(data.meta.total_pages)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load archived jobs")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [currentPage, search, typeFilter])
+
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto flex items-center justify-center px-4 py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+          <p className="text-destructive">{error}</p>
+          <Button variant="outline" className="mt-4" onClick={fetchJobs}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -66,15 +105,21 @@ export default function ArchivedJobsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name"
+            placeholder="Search by title"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setCurrentPage(1)
+            }}
             className="pl-10"
           />
         </div>
         <Select
           value={typeFilter}
-          onValueChange={setTypeFilter}
+          onValueChange={(value) => {
+            setTypeFilter(value)
+            setCurrentPage(1)
+          }}
         >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Type" />
@@ -82,7 +127,6 @@ export default function ArchivedJobsPage() {
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="full_time">Full Time</SelectItem>
-            <SelectItem value="part_time">Part Time</SelectItem>
             <SelectItem value="contract">Contract</SelectItem>
             <SelectItem value="internship">Internship</SelectItem>
           </SelectContent>
@@ -103,42 +147,77 @@ export default function ArchivedJobsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredJobs.map((job) => (
-              <TableRow key={job.id}>
-                <TableCell className="font-medium">{job.title}</TableCell>
-                <TableCell>{formatJobType(job.type)}</TableCell>
-                <TableCell>{formatSalaryCompact(job.salary_min, job.salary_max)}</TableCell>
-                <TableCell>{job.headcount}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">Archived</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon-sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/jobs/${job.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {jobs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  No archived jobs found.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              jobs.map((job) => (
+                <TableRow key={job.id}>
+                  <TableCell className="font-medium">{job.title}</TableCell>
+                  <TableCell>{formatJobType(job.job_type)}</TableCell>
+                  <TableCell>{formatSalaryCompact(job.min_salary, job.max_salary)}</TableCell>
+                  <TableCell>{job.headcount}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">Archived</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/jobs/${job.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
-        {filteredJobs.length === 0 && (
-          <div className="py-8 text-center text-muted-foreground">
-            No archived jobs found.
-          </div>
-        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
