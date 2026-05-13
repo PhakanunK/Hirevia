@@ -12,8 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { adminFetch } from "@/lib/api"
-import type { DashboardResponse } from "@/lib/types"
+import { getDashboard } from "@/lib/actions/dashboard.action"
+import type { DashboardResponse } from "@/lib/models/user.model"
 import { Briefcase, AlertTriangle, FileText, CalendarDays, Users, CheckCircle, Clock, Loader2 } from "lucide-react"
 
 export default function DashboardPage() {
@@ -22,18 +22,10 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await adminFetch<DashboardResponse>('/dashboard')
-        setData(response)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchDashboard()
+    getDashboard()
+      .then(setData)
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load dashboard"))
+      .finally(() => setIsLoading(false))
   }, [])
 
   if (isLoading) {
@@ -54,9 +46,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!data) {
-    return null
-  }
+  if (!data) return null
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -117,17 +107,15 @@ export default function DashboardPage() {
               <TableBody>
                 {data.upcoming_interviews.map((interview, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">
-                      {interview.applicant_name}
-                    </TableCell>
+                    <TableCell className="font-medium">{interview.applicant_name}</TableCell>
                     <TableCell>{interview.job_title}</TableCell>
                     <TableCell>
-                      {new Date(interview.interview_date).toLocaleString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                      {new Date(interview.interview_date).toLocaleString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </TableCell>
                   </TableRow>
@@ -135,7 +123,7 @@ export default function DashboardPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-center text-muted-foreground py-4">No upcoming interviews</p>
+            <p className="py-4 text-center text-muted-foreground">No upcoming interviews</p>
           )}
         </CardContent>
       </Card>
@@ -148,28 +136,21 @@ export default function DashboardPage() {
         <CardContent className="space-y-4">
           {data.latest_applications.length > 0 ? (
             data.latest_applications.map((application, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-lg border p-4"
-              >
+              <div key={index} className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                   <p className="font-medium">{application.job_title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {application.applicant_name}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{application.applicant_name}</p>
                   <p className="text-xs text-muted-foreground">
                     Applied: {new Date(application.applied_date).toLocaleDateString()}
                   </p>
                 </div>
                 <Button asChild size="sm">
-                  <Link href="/admin/applications">
-                    View All
-                  </Link>
+                  <Link href="/admin/applications">View All</Link>
                 </Button>
               </div>
             ))
           ) : (
-            <p className="text-center text-muted-foreground py-4">No recent applications</p>
+            <p className="py-4 text-center text-muted-foreground">No recent applications</p>
           )}
         </CardContent>
       </Card>

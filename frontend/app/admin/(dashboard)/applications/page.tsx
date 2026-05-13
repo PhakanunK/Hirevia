@@ -21,23 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { adminFetch } from "@/lib/api"
-import { APPLICATION_STATUS_CONFIG } from "@/lib/constants"
-import type {
-  ApplicationResponse,
-  JobAdminResponse,
-  PaginatedResponse,
-  PaginationMeta,
-} from "@/lib/types"
-import { PAGE_SIZE_TABLE } from "@/lib/types"
-import { Search, Eye, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
+import { APPLICATION_STATUS_CONFIG } from "@/lib/utils/constants"
+import { getApplications } from "@/lib/actions/application.action"
+import { getJobs } from "@/lib/actions/job.action"
+import type { ApplicationResponse } from "@/lib/models/application.model"
+import type { PaginationMeta } from "@/lib/models/user.model"
+import type { JobAdminResponse } from "@/lib/models/job.model"
+import { Search, Eye, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 
 function ApplicationsContent() {
   const searchParams = useSearchParams()
@@ -49,48 +45,33 @@ function ApplicationsContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Filters — drive the API query
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [selectedJob, setSelectedJob] = useState<string>(jobIdFilter || "all")
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Debounced search to avoid hammering the API on every keystroke
   const [debouncedSearch, setDebouncedSearch] = useState("")
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400)
     return () => clearTimeout(timer)
   }, [search])
 
-  // Fetch jobs once for the filter dropdown (all jobs, no pagination needed here)
   useEffect(() => {
-    adminFetch<PaginatedResponse<JobAdminResponse>>("/jobs", {
-      params: { page: "1", page_size: "100" },
-    })
+    getJobs({ page: 1, page_size: 100 })
       .then((res) => setJobs(res.data))
-      .catch(() => {
-        // Non-critical — filter dropdown just won't populate
-      })
+      .catch(() => {})
   }, [])
 
-  // Fetch applications whenever filters or page change
   const fetchApplications = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-
     try {
-      const params: Record<string, string> = {
-        page: String(currentPage),
-        page_size: String(PAGE_SIZE_TABLE),
-      }
-      if (statusFilter !== "all") params.status = statusFilter
-      if (selectedJob !== "all") params.job_id = selectedJob
-      if (debouncedSearch) params.keyword = debouncedSearch
-
-      const res = await adminFetch<PaginatedResponse<ApplicationResponse>>(
-        "/applications",
-        { params }
-      )
+      const res = await getApplications({
+        page: currentPage,
+        keyword: debouncedSearch || undefined,
+        job_id: selectedJob !== "all" ? selectedJob : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      })
       setApplications(res.data)
       setMeta(res.meta)
     } catch (err) {
@@ -104,19 +85,9 @@ function ApplicationsContent() {
     fetchApplications()
   }, [fetchApplications])
 
-  // Reset to page 1 when filters change
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value)
-    setCurrentPage(1)
-  }
-  const handleJobChange = (value: string) => {
-    setSelectedJob(value)
-    setCurrentPage(1)
-  }
-  const handleSearchChange = (value: string) => {
-    setSearch(value)
-    setCurrentPage(1)
-  }
+  const handleStatusChange = (value: string) => { setStatusFilter(value); setCurrentPage(1) }
+  const handleJobChange = (value: string) => { setSelectedJob(value); setCurrentPage(1) }
+  const handleSearchChange = (value: string) => { setSearch(value); setCurrentPage(1) }
 
   const totalPages = meta ? meta.total_pages : 1
 
@@ -172,10 +143,7 @@ function ApplicationsContent() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              {/* job_title is not in ApplicationResponse — show job_id instead.
-                  If you want job titles, you'll need a separate lookup or a
-                  backend endpoint change to include it in the response. */}
-              <TableHead>Job ID</TableHead>
+              <TableHead>Job</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Applied Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -194,18 +162,13 @@ function ApplicationsContent() {
                   <div className="flex flex-col items-center gap-3">
                     <AlertCircle className="h-6 w-6 text-destructive" />
                     <p className="text-muted-foreground">{error}</p>
-                    <Button size="sm" onClick={fetchApplications}>
-                      Retry
-                    </Button>
+                    <Button size="sm" onClick={fetchApplications}>Retry</Button>
                   </div>
                 </TableCell>
               </TableRow>
             ) : applications.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-8 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   No applications found
                 </TableCell>
               </TableRow>
@@ -217,7 +180,6 @@ function ApplicationsContent() {
                   </TableCell>
                   <TableCell>{app.email}</TableCell>
                   <TableCell>
-                    {/* Resolve title from local jobs list if available */}
                     {jobs.find((j) => j.id === app.job_id)?.title ?? `#${app.job_id}`}
                   </TableCell>
                   <TableCell>
@@ -252,7 +214,7 @@ function ApplicationsContent() {
         </Table>
       </div>
 
-      {/* Pagination — driven by backend meta */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-2">
           <Button
@@ -290,9 +252,7 @@ function ApplicationsContent() {
 
 export default function ApplicationsPage() {
   return (
-    <Suspense
-      fallback={<div className="container mx-auto px-4 py-8">Loading...</div>}
-    >
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading...</div>}>
       <ApplicationsContent />
     </Suspense>
   )

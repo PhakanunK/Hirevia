@@ -2,8 +2,8 @@
 
 import { useSearchParams } from "next/navigation"
 import { Suspense, useState, useEffect } from "react"
-import { publicFetch } from "@/lib/api"
-import type { ApplicationStatusResponse, ApplicationStatus } from "@/lib/types"
+import { getApplicationStatus } from "@/lib/actions/public.action"
+import type { ApplicationStatusResponse, ApplicationStatus } from "@/lib/models/application.model"
 import { CheckCircle2, Circle, XCircle, User, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -50,13 +50,9 @@ function StatusStep({
           stepState === "rejected" && "border-muted-foreground/30"
         )}
       >
-        {stepState === "complete" && (
-          <CheckCircle2 className="h-8 w-8 text-primary" />
-        )}
+        {stepState === "complete" && <CheckCircle2 className="h-8 w-8 text-primary" />}
         {stepState === "current" && <Circle className="h-8 w-8" />}
-        {stepState === "pending" && (
-          <Circle className="h-8 w-8 text-muted-foreground/30" />
-        )}
+        {stepState === "pending" && <Circle className="h-8 w-8 text-muted-foreground/30" />}
       </div>
       <span
         className={cn(
@@ -76,9 +72,7 @@ function RejectStep({ isRejected }: { isRejected: boolean }) {
       <div
         className={cn(
           "flex h-16 w-16 items-center justify-center rounded-full border-2",
-          isRejected
-            ? "border-destructive bg-destructive/10"
-            : "border-muted-foreground/30"
+          isRejected ? "border-destructive bg-destructive/10" : "border-muted-foreground/30"
         )}
       >
         <XCircle
@@ -104,7 +98,7 @@ function StatusContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
-  const [application, setApplicationStatusResponse] = useState<ApplicationStatusResponse | null>(null)
+  const [application, setApplication] = useState<ApplicationStatusResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -121,12 +115,10 @@ function StatusContent() {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await publicFetch<ApplicationStatusResponse>('/status', {
-        params: { token: token! }
-      })
-      setApplicationStatusResponse(data)
+      const data = await getApplicationStatus(token!)
+      setApplication(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load application status')
+      setError(err instanceof Error ? err.message : "Failed to load application status")
     } finally {
       setIsLoading(false)
     }
@@ -148,14 +140,12 @@ function StatusContent() {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <h1 className="mb-12 text-center text-3xl font-bold">Status</h1>
         <div className="py-12 text-center">
-          <p className="mb-4 text-destructive">{error || 'ApplicationStatusResponse not found'}</p>
+          <p className="mb-4 text-destructive">{error || "Application not found"}</p>
           {token && <Button onClick={fetchStatus}>Try Again</Button>}
         </div>
       </div>
     )
   }
-
-  const applicantName = application.first_name
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -168,7 +158,7 @@ function StatusContent() {
       </div>
 
       <div className="mb-8 text-center">
-        <p className="text-lg">Hi {applicantName},</p>
+        <p className="text-lg">Hi {application.first_name},</p>
         <p className="mt-2 text-muted-foreground">
           {application.status === "rejected"
             ? "Unfortunately, we have decided not to move forward with your application."
@@ -196,7 +186,7 @@ function StatusContent() {
             )}
           </div>
         ))}
-        <div className="h-0.5 w-8 mt-7 bg-muted-foreground/20" />
+        <div className="mt-7 h-0.5 w-8 bg-muted-foreground/20" />
         <RejectStep isRejected={application.status === "rejected"} />
       </div>
     </div>

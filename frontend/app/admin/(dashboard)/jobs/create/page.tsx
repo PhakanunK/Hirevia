@@ -4,8 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { adminFetch } from "@/lib/api"
-import type { JobAdminResponse, JobCreate } from "@/lib/types"
+import { createJob } from "@/lib/actions/job.action"
+import type { JobCreate } from "@/lib/models/job.model"
 import { JobFormFields, DEFAULT_JOB_FORM_DATA, type JobFormData } from "@/components/admin/job-form-fields"
 
 export default function CreateJobPage() {
@@ -30,12 +30,7 @@ export default function CreateJobPage() {
         max_salary: formData.max_salary ? parseInt(formData.max_salary) * 1000 : null,
         urgent: formData.urgent,
       }
-
-      await adminFetch<JobAdminResponse>("/jobs", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      })
-
+      await createJob(payload)
       router.push("/admin/jobs")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create job")

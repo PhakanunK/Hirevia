@@ -13,10 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { publicFetch } from "@/lib/api"
-import { formatJobType, formatSalaryCompact } from "@/lib/format"
-import type { JobPublicResponse, PaginatedResponse, PaginationMeta } from "@/lib/types"
-import { PAGE_SIZE_CARD } from "@/lib/types"
+import { getPublicJobs } from "@/lib/actions/public.action"
+import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
+import { PAGE_SIZE_CARD } from "@/lib/utils/constants"
+import type { JobPublicResponse } from "@/lib/models/job.model"
+import type { PaginationMeta } from "@/lib/models/user.model"
 import { Search, Loader2, AlertCircle } from "lucide-react"
 
 // value = "salary_min:salary_max" sent to API (empty string = no bound)
@@ -81,19 +82,18 @@ export default function CareersPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const params: Record<string, string> = {
-        page: String(currentPage),
-        page_size: String(PAGE_SIZE_CARD),
-      }
-      if (typeFilter !== "all") params.job_type = typeFilter
-      if (debouncedSearch) params.keyword = debouncedSearch
-      if (salaryRange !== "all") {
-        const [min, max] = salaryRange.split(":")
-        if (min) params.salary_min = min
-        if (max) params.salary_max = max
-      }
+      const [salary_min, salary_max] = salaryRange !== "all"
+        ? salaryRange.split(":")
+        : [undefined, undefined]
 
-      const res = await publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", { params })
+      const res = await getPublicJobs({
+        page: currentPage,
+        page_size: PAGE_SIZE_CARD,
+        keyword: debouncedSearch || undefined,
+        job_type: typeFilter !== "all" ? typeFilter : undefined,
+        salary_min: salary_min || undefined,
+        salary_max: salary_max || undefined,
+      })
       setJobs(res.data)
       setMeta(res.meta)
     } catch (err) {

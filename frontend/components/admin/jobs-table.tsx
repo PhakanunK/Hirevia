@@ -28,10 +28,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PageLoader, PageError } from "@/components/ui/page-states"
-import { adminFetch } from "@/lib/api"
-import { formatJobType, formatSalaryCompact } from "@/lib/format"
-import type { JobAdminResponse, PaginatedResponse } from "@/lib/types"
-import { PAGE_SIZE_TABLE } from "@/lib/types"
+import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
+import { PAGE_SIZE_TABLE } from "@/lib/utils/constants"
+import { getJobs, archiveJob } from "@/lib/actions/job.action"
+import type { JobAdminResponse } from "@/lib/models/job.model"
 import { Search, Eye, Pencil, MoreHorizontal, Archive } from "lucide-react"
 
 interface JobsTableProps {
@@ -52,15 +52,13 @@ export function JobsTable({ isArchived }: JobsTableProps) {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await adminFetch<PaginatedResponse<JobAdminResponse>>("/jobs", {
-        params: {
-          page: String(currentPage),
-          page_size: String(PAGE_SIZE_TABLE),
-          is_archived: String(isArchived),
-          ...(search && { keyword: search }),
-          ...(typeFilter !== "all" && { job_type: typeFilter }),
-          ...(!isArchived && statusFilter !== "all" && { status: statusFilter }),
-        },
+      const data = await getJobs({
+        page: currentPage,
+        page_size: PAGE_SIZE_TABLE,
+        is_archived: isArchived,
+        keyword: search || undefined,
+        job_type: typeFilter !== "all" ? typeFilter : undefined,
+        status: !isArchived && statusFilter !== "all" ? statusFilter : undefined,
       })
       setJobs(data.data)
       setTotalPages(data.meta.total_pages)
@@ -77,7 +75,7 @@ export function JobsTable({ isArchived }: JobsTableProps) {
 
   const handleArchive = async (jobId: number) => {
     try {
-      await adminFetch(`/jobs/${jobId}`, { method: "DELETE" })
+      await archiveJob(jobId)
       setJobs((prev) => prev.filter((j) => j.id !== jobId))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive job")

@@ -5,16 +5,24 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LogOut, User } from "lucide-react"
+import { useAdminContext } from "@/contexts/admin-context"
 
-const navItems = [
+const baseNavItems = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/applications", label: "Applications" },
-  { href: "#", label: "Support" },
 ]
 
 export function AdminHeader() {
   const pathname = usePathname()
+  const { currentUser } = useAdminContext()
+
+  const navItems = [
+    ...baseNavItems,
+    ...(currentUser?.role === "head_admin"
+      ? [{ href: "/admin/users", label: "Users" }]
+      : []),
+  ]
 
   const handleLogout = () => {
     localStorage.removeItem("access_token")
@@ -52,7 +60,7 @@ export function AdminHeader() {
           </Button>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm">Admin01</span>
+            <span className="text-sm">{currentUser?.username ?? "..."}</span>
           </div>
         </div>
       </div>

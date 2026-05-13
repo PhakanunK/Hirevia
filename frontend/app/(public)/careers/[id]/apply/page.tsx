@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { publicFetch, publicFetchFormData } from "@/lib/api"
-import type { JobPublicResponse, ApplicationSubmitResponse, UploadResponse } from "@/lib/types"
+import { getPublicJob, uploadResume, submitApplication } from "@/lib/actions/public.action"
+import type { JobPublicResponse } from "@/lib/models/job.model"
 import { Upload, Loader2 } from "lucide-react"
 
 export default function ApplyPage({
@@ -40,7 +40,7 @@ export default function ApplyPage({
     setIsLoadingJob(true)
     setJobError(null)
     try {
-      const data = await publicFetch<JobPublicResponse>(`/jobs/${id}`)
+      const data = await getPublicJob(id)
       setJob(data)
     } catch (err) {
       setJobError(err instanceof Error ? err.message : "Failed to load job")
@@ -56,25 +56,18 @@ export default function ApplyPage({
     setSubmitError(null)
 
     try {
-      // Step 1: upload resume, get URL
       setSubmitStep("uploading")
-      const uploadForm = new FormData()
-      uploadForm.append("file", formData.resume)
-      const { url: resume_url } = await publicFetchFormData<UploadResponse>("/upload/resume", uploadForm)
+      const { url: resume_url } = await uploadResume(formData.resume)
 
-      // Step 2: submit application with the returned URL
       setSubmitStep("submitting")
-      const res = await publicFetch<ApplicationSubmitResponse>("/apply", {
-        method: "POST",
-        body: JSON.stringify({
-          job_id: parseInt(id),
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          resume_url,
-          portfolio_url: formData.portfolio || undefined,
-        }),
+      const res = await submitApplication({
+        job_id: parseInt(id),
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        resume_url,
+        portfolio_url: formData.portfolio || undefined,
       })
 
       router.push(`/careers/${id}/apply/success?token=${res.tracking_token}`)

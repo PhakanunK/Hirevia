@@ -4,9 +4,9 @@ import { useState, useEffect, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { publicFetch } from "@/lib/api"
-import { formatJobType, formatSalary } from "@/lib/format"
-import type { JobPublicResponse } from "@/lib/types"
+import { getPublicJob } from "@/lib/actions/public.action"
+import { formatJobType, formatSalary } from "@/lib/utils/format.utils"
+import type { JobPublicResponse } from "@/lib/models/job.model"
 import { Loader2 } from "lucide-react"
 
 export default function JobDetailPage({
@@ -27,7 +27,7 @@ export default function JobDetailPage({
     setIsLoading(true)
     setError(null)
     try {
-      const data = await publicFetch<JobPublicResponse>(`/jobs/${id}`)
+      const data = await getPublicJob(id)
       setJob(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load job")
