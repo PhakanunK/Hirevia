@@ -19,7 +19,7 @@ The main goal is to explore how production-style systems are designed and implem
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 14 + shadcn/ui |
+| Frontend | Next.js (App Router) + React 19 + Tailwind CSS 4 + shadcn/ui |
 | Backend | FastAPI + SQLAlchemy |
 | Database | PostgreSQL (Supabase) |
 | Storage | Supabase Storage |
@@ -48,6 +48,22 @@ The main goal is to explore how production-style systems are designed and implem
 ## Design
 The UX/UI was designed in Figma before development:
 - Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/Hirevia-UX-UI?node-id=4604-13287&t=l5pH9GDputxae44F-1
+
+---
+
+## Assets & Image Policy
+
+All placeholder images bundled by v0 during initial scaffolding (including `hero-team.jpg` and other stock photos) have been removed from this project to ensure safe use as a portfolio. The only remaining image assets are app icons generated as pure SVG/PNG geometry by v0, which carry no photo licensing concerns.
+
+---
+
+## Tools & AI Used
+
+| Tool | Role |
+|------|------|
+| [Figma](https://figma.com) | UX/UI design and prototyping |
+| [v0](https://v0.dev) | Initial frontend scaffolding and component generation |
+| [Claude Code](https://claude.ai/code) | Frontend audit, fixing API connections from v0 to backend, and minor backend assistance |
 
 ---
 
@@ -85,7 +101,8 @@ WITH CHECK (bucket_id = 'resumes');
 4. For production, verify your own domain in Resend settings
 
 ### 4. Configure environment variables
-Copy the example file and fill in your values:
+
+**Backend** — copy the example file and fill in your values:
 ```bash
 cp backend/.env.example backend/.env
 ```
@@ -115,6 +132,16 @@ FRONTEND_URL=http://localhost:3000
 PAGE_SIZE_CARD=6
 PAGE_SIZE_TABLE=10
 MAX_PAGE_SIZE=50
+```
+
+**Frontend** — copy the example file and fill in your values:
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Edit `frontend/.env`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ### 5. Run with Docker

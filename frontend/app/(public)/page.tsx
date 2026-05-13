@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +22,7 @@ export default async function HomePage() {
     <div>
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary via-primary to-primary/80 py-20 text-primary-foreground">
-        <div className="container mx-auto grid items-center gap-12 px-4 lg:grid-cols-2">
+        <div className="container mx-auto px-4">
           <div>
             <h1 className="mb-4 text-4xl font-bold leading-tight text-balance lg:text-5xl">
               Join our team
@@ -39,17 +38,6 @@ export default async function HomePage() {
             >
               <Link href="/careers">Explore Careers</Link>
             </Button>
-          </div>
-          <div className="relative hidden aspect-[4/3] lg:block">
-            <div className="absolute inset-0 overflow-hidden rounded-lg">
-              <Image
-                src="/images/hero-team.jpg"
-                alt="Team collaboration"
-                width={500}
-                height={375}
-                className="h-full w-full rounded-lg object-cover"
-              />
-            </div>
           </div>
         </div>
       </section>
