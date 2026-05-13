@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import { Suspense, useState, useEffect } from "react"
 import { publicFetch } from "@/lib/api"
-import type { Application, ApplicationStatus } from "@/lib/types"
+import type { ApplicationStatusResponse, ApplicationStatus } from "@/lib/types"
 import { CheckCircle2, Circle, XCircle, User, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -70,13 +70,32 @@ function StatusStep({
   )
 }
 
-function RejectStep() {
+function RejectStep({ isRejected }: { isRejected: boolean }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-destructive bg-destructive/10">
-        <XCircle className="h-8 w-8 text-destructive" />
+      <div
+        className={cn(
+          "flex h-16 w-16 items-center justify-center rounded-full border-2",
+          isRejected
+            ? "border-destructive bg-destructive/10"
+            : "border-muted-foreground/30"
+        )}
+      >
+        <XCircle
+          className={cn(
+            "h-8 w-8",
+            isRejected ? "text-destructive" : "text-muted-foreground/30"
+          )}
+        />
       </div>
-      <span className="text-sm font-medium">Reject</span>
+      <span
+        className={cn(
+          "text-sm font-medium",
+          !isRejected && "text-muted-foreground/50"
+        )}
+      >
+        Rejected
+      </span>
     </div>
   )
 }
@@ -85,7 +104,7 @@ function StatusContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
-  const [application, setApplication] = useState<Application | null>(null)
+  const [application, setApplicationStatusResponse] = useState<ApplicationStatusResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -102,10 +121,10 @@ function StatusContent() {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await publicFetch<Application>('/status', {
+      const data = await publicFetch<ApplicationStatusResponse>('/status', {
         params: { token: token! }
       })
-      setApplication(data)
+      setApplicationStatusResponse(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load application status')
     } finally {
@@ -129,7 +148,7 @@ function StatusContent() {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <h1 className="mb-12 text-center text-3xl font-bold">Status</h1>
         <div className="py-12 text-center">
-          <p className="mb-4 text-destructive">{error || 'Application not found'}</p>
+          <p className="mb-4 text-destructive">{error || 'ApplicationStatusResponse not found'}</p>
           {token && <Button onClick={fetchStatus}>Try Again</Button>}
         </div>
       </div>
@@ -178,7 +197,7 @@ function StatusContent() {
           </div>
         ))}
         <div className="h-0.5 w-8 mt-7 bg-muted-foreground/20" />
-        <RejectStep />
+        <RejectStep isRejected={application.status === "rejected"} />
       </div>
     </div>
   )

@@ -3,7 +3,6 @@ import type { JobType } from "./types"
 export const formatJobType = (type: JobType) => {
   const types: Record<JobType, string> = {
     full_time: "Full Time",
-    part_time: "Part Time",
     contract: "Contract",
     internship: "Internship",
   }

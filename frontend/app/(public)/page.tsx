@@ -3,11 +3,21 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { mockJobs } from "@/lib/mock-data"
+import { publicFetch } from "@/lib/api"
 import { formatJobType, formatSalaryCompact } from "@/lib/format"
+import type { JobPublicResponse, PaginatedResponse } from "@/lib/types"
 
-export default function HomePage() {
-  const featuredJobs = mockJobs.filter((job) => job.status === "open").slice(0, 3)
+export default async function HomePage() {
+  let featuredJobs: JobPublicResponse[] = []
+
+  try {
+    const res = await publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", {
+      params: { page: "1", page_size: "3" },
+    })
+    featuredJobs = res.data
+  } catch {
+    // backend unavailable — render with empty grid
+  }
 
   return (
     <div>
@@ -50,29 +60,37 @@ export default function HomePage() {
           <h2 className="mb-8 text-center text-2xl font-bold">
             We&apos;re Hiring
           </h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featuredJobs.map((job) => (
-              <Card key={job.id} className="flex flex-col">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{job.title}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{formatJobType(job.type)}</Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {formatSalaryCompact(job.salary_min, job.salary_max)}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-1 flex-col">
-                  <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-3">
-                    {job.description}
-                  </p>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href={`/careers/${job.id}`}>View Details</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+
+          {featuredJobs.length === 0 ? (
+            <p className="text-center text-muted-foreground">
+              No open positions at the moment. Check back soon!
+            </p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {featuredJobs.map((job) => (
+                <Card key={job.id} className="flex flex-col">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{job.title}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{formatJobType(job.job_type)}</Badge>
+                      <span className="text-sm text-muted-foreground">
+                        {formatSalaryCompact(job.min_salary, job.max_salary ?? undefined)}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-1 flex-col">
+                    <p className="mb-4 flex-1 text-sm text-muted-foreground line-clamp-3">
+                      {job.description}
+                    </p>
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href={`/careers/${job.id}`}>View Details</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
           <div className="mt-8 text-center">
             <Button asChild>
               <Link href="/careers">View All Jobs</Link>
