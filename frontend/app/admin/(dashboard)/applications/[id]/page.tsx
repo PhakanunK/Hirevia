@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { adminFetch } from "@/lib/api"
-import type { Application, ApplicationStatus } from "@/lib/types"
+import type { ApplicationResponse, ApplicationStatus, JobAdminResponse } from "@/lib/types"
 import { Mail, Phone, FileText, Globe, Calendar, Loader2, AlertCircle } from "lucide-react"
 
 const STATUS_CONFIG: Record<ApplicationStatus, { color: string; label: string }> = {
@@ -36,8 +36,6 @@ const STATUS_CONFIG: Record<ApplicationStatus, { color: string; label: string }>
   offer: { color: "bg-green-100 text-green-800 border-green-200", label: "Offer" },
   rejected: { color: "bg-red-100 text-red-800 border-red-200", label: "Rejected" },
 }
-
-const PIPELINE_ORDER: ApplicationStatus[] = ["applied", "screening", "interview", "offer"]
 
 const NEXT_STATUS: Record<ApplicationStatus, ApplicationStatus | null> = {
   applied: "screening",
@@ -54,7 +52,8 @@ export default function ApplicationDetailPage({
 }) {
   const { id } = use(params)
 
-  const [application, setApplication] = useState<Application | null>(null)
+  const [application, setApplication] = useState<ApplicationResponse | null>(null)
+  const [jobTitle, setJobTitle] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -77,19 +76,18 @@ export default function ApplicationDetailPage({
       setError(null)
 
       try {
-        const response = await adminFetch(`/applications/${id}`)
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Application not found')
-          }
-          throw new Error('Failed to fetch application')
-        }
-
-        const data = await response.json()
+        const data = await adminFetch<ApplicationResponse>(`/applications/${id}`)
         setApplication(data)
         setCurrentStatus(data.status)
         setScheduledInterviewDate(data.interview_date || null)
+
+        // job_title is not in ApplicationResponse — fetch separately
+        try {
+          const job = await adminFetch<JobAdminResponse>(`/jobs/${data.job_id}`)
+          setJobTitle(job.title)
+        } catch {
+          // non-critical, falls back to job_id
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -103,23 +101,15 @@ export default function ApplicationDetailPage({
   const updateStatus = async (newStatus: ApplicationStatus, interviewDate?: string) => {
     setIsUpdating(true)
     try {
-      const response = await adminFetch(`/applications/${id}/status`, {
+      await adminFetch(`/applications/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: newStatus,
-          ...(interviewDate && { interview_date: interviewDate })
+          ...(interviewDate && { interview_date: interviewDate }),
         }),
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to update status')
-      }
-
       setCurrentStatus(newStatus)
-      if (interviewDate) {
-        setScheduledInterviewDate(interviewDate)
-      }
+      if (interviewDate) setScheduledInterviewDate(interviewDate)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
@@ -130,16 +120,10 @@ export default function ApplicationDetailPage({
   const updateInterviewDate = async (interviewDate: string) => {
     setIsUpdating(true)
     try {
-      const response = await adminFetch(`/applications/${id}/interview-date`, {
+      await adminFetch(`/applications/${id}/interview-date`, {
         method: 'PATCH',
         body: JSON.stringify({ interview_date: interviewDate }),
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to update interview date')
-      }
-
       setScheduledInterviewDate(interviewDate)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update interview date')
@@ -250,7 +234,7 @@ export default function ApplicationDetailPage({
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-primary">{application.job_title}</CardTitle>
+              <CardTitle className="text-primary">{jobTitle ?? `Job #${application.job_id}`}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
