@@ -5,16 +5,12 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PageLoader, PageError } from "@/components/ui/page-states"
 import { adminFetch } from "@/lib/api"
 import { formatJobType, formatSalary } from "@/lib/format"
+import { JOB_STATUS_COLORS } from "@/lib/constants"
 import type { JobAdminResponse, JobStatus } from "@/lib/types"
 import { Loader2 } from "lucide-react"
-
-const STATUS_COLORS: Record<JobStatus, string> = {
-  draft: "bg-gray-100 text-gray-800 border-gray-200",
-  open: "bg-green-100 text-green-800 border-green-200",
-  closed: "bg-red-100 text-red-800 border-red-200",
-}
 
 export default function JobDetailPage({
   params,
@@ -30,20 +26,10 @@ export default function JobDetailPage({
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        const data = await adminFetch<JobAdminResponse>(`/jobs/${id}`)
-        setJob(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load job")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchJob()
+    adminFetch<JobAdminResponse>(`/jobs/${id}`)
+      .then(setJob)
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load job"))
+      .finally(() => setIsLoading(false))
   }, [id])
 
   const handleStatusChange = async (newStatus: JobStatus) => {
@@ -62,8 +48,8 @@ export default function JobDetailPage({
   }
 
   const handleArchive = async () => {
+    setIsArchiving(true)
     try {
-      setIsArchiving(true)
       await adminFetch(`/jobs/${id}`, { method: "DELETE" })
       router.push("/admin/jobs")
     } catch (err) {
@@ -72,30 +58,8 @@ export default function JobDetailPage({
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto flex items-center justify-center px-4 py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (error || !job) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
-          <p className="text-destructive">{error || "Job not found"}</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => router.push("/admin/jobs")}
-          >
-            Back to Jobs
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <PageLoader />
+  if (error || !job) return <PageError message={error ?? "Job not found"} action={{ label: "Back to Jobs", onClick: () => router.push("/admin/jobs") }} />
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -114,15 +78,13 @@ export default function JobDetailPage({
 
         <div className="mb-6">
           <h3 className="mb-2 font-semibold">Requirements:</h3>
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {job.requirements}
-          </p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">{job.requirements}</p>
         </div>
 
         <div className="mb-6 text-sm text-muted-foreground">
           <div className="mb-1 flex items-center gap-2">
             <span>Status:</span>
-            <Badge className={STATUS_COLORS[job.status]}>
+            <Badge className={JOB_STATUS_COLORS[job.status]}>
               {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
             </Badge>
           </div>
@@ -149,9 +111,7 @@ export default function JobDetailPage({
 
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link href={`/admin/applications?job_id=${job.id}`}>
-              View Applications
-            </Link>
+            <Link href={`/admin/applications?job_id=${job.id}`}>View Applications</Link>
           </Button>
           {!job.is_archived && (
             <>
@@ -160,19 +120,19 @@ export default function JobDetailPage({
               </Button>
               {job.status === "draft" && (
                 <Button onClick={() => handleStatusChange("open")} disabled={isUpdatingStatus}>
-                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isUpdatingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Publish
                 </Button>
               )}
               {job.status === "open" && (
                 <Button variant="outline" onClick={() => handleStatusChange("closed")} disabled={isUpdatingStatus}>
-                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isUpdatingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Close
                 </Button>
               )}
               {job.status === "closed" && (
                 <Button variant="outline" onClick={() => handleStatusChange("open")} disabled={isUpdatingStatus}>
-                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isUpdatingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Reopen
                 </Button>
               )}

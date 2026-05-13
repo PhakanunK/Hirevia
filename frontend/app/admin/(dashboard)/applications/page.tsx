@@ -22,9 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { adminFetch } from "@/lib/api"
+import { APPLICATION_STATUS_CONFIG } from "@/lib/constants"
 import type {
   ApplicationResponse,
-  ApplicationStatus,
   JobAdminResponse,
   PaginatedResponse,
   PaginationMeta,
@@ -38,13 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const statusColors: Record<ApplicationStatus, string> = {
-  applied: "bg-blue-100 text-blue-800 border-blue-200",
-  screening: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  interview: "bg-purple-100 text-purple-800 border-purple-200",
-  offer: "bg-green-100 text-green-800 border-green-200",
-  rejected: "bg-red-100 text-red-800 border-red-200",
-}
 
 function ApplicationsContent() {
   const searchParams = useSearchParams()
@@ -228,8 +221,8 @@ function ApplicationsContent() {
                     {jobs.find((j) => j.id === app.job_id)?.title ?? `#${app.job_id}`}
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusColors[app.status]}>
-                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    <Badge className={APPLICATION_STATUS_CONFIG[app.status].color}>
+                      {APPLICATION_STATUS_CONFIG[app.status].label}
                     </Badge>
                   </TableCell>
                   <TableCell>
