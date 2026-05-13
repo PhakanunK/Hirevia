@@ -26,24 +26,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { adminFetch } from "@/lib/api"
+import { APPLICATION_STATUS_CONFIG, NEXT_APPLICATION_STATUS } from "@/lib/constants"
 import type { ApplicationResponse, ApplicationStatus, JobAdminResponse } from "@/lib/types"
 import { Mail, Phone, FileText, Globe, Calendar, Loader2, AlertCircle } from "lucide-react"
-
-const STATUS_CONFIG: Record<ApplicationStatus, { color: string; label: string }> = {
-  applied: { color: "bg-blue-100 text-blue-800 border-blue-200", label: "Applied" },
-  screening: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: "Screening" },
-  interview: { color: "bg-purple-100 text-purple-800 border-purple-200", label: "Interview" },
-  offer: { color: "bg-green-100 text-green-800 border-green-200", label: "Offer" },
-  rejected: { color: "bg-red-100 text-red-800 border-red-200", label: "Rejected" },
-}
-
-const NEXT_STATUS: Record<ApplicationStatus, ApplicationStatus | null> = {
-  applied: "screening",
-  screening: "interview",
-  interview: "offer",
-  offer: null,
-  rejected: null,
-}
 
 export default function ApplicationDetailPage({
   params,
@@ -163,7 +148,7 @@ export default function ApplicationDetailPage({
   }
 
   const handleMoveToNextStage = () => {
-    const next = NEXT_STATUS[currentStatus]
+    const next = NEXT_APPLICATION_STATUS[currentStatus]
     if (!next) return
 
     if (next === "interview") {
@@ -216,7 +201,7 @@ export default function ApplicationDetailPage({
     setShowRejectModal(false)
   }
 
-  const nextStatus = NEXT_STATUS[currentStatus]
+  const nextStatus = NEXT_APPLICATION_STATUS[currentStatus]
   const canReject = currentStatus !== "rejected" && currentStatus !== "offer"
 
   return (
@@ -239,8 +224,8 @@ export default function ApplicationDetailPage({
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Status:</span>
-                <Badge className={STATUS_CONFIG[currentStatus].color}>
-                  {STATUS_CONFIG[currentStatus].label}
+                <Badge className={APPLICATION_STATUS_CONFIG[currentStatus].color}>
+                  {APPLICATION_STATUS_CONFIG[currentStatus].label}
                 </Badge>
               </div>
 
@@ -318,7 +303,7 @@ export default function ApplicationDetailPage({
                 {nextStatus && (
                   <Button onClick={handleMoveToNextStage} disabled={isUpdating}>
                     {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Move to {STATUS_CONFIG[nextStatus].label}
+                    Move to {APPLICATION_STATUS_CONFIG[nextStatus as ApplicationStatus].label}
                   </Button>
                 )}
                 {canReject && (
@@ -485,7 +470,7 @@ export default function ApplicationDetailPage({
             <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to move this application to{" "}
-              {pendingStatus ? STATUS_CONFIG[pendingStatus].label : ""}?
+              {pendingStatus ? APPLICATION_STATUS_CONFIG[pendingStatus].label : ""}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

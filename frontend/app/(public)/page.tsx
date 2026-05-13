@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,18 +8,20 @@ import { Badge } from "@/components/ui/badge"
 import { publicFetch } from "@/lib/api"
 import { formatJobType, formatSalaryCompact } from "@/lib/format"
 import type { JobPublicResponse, PaginatedResponse } from "@/lib/types"
+import { Loader2 } from "lucide-react"
 
-export default async function HomePage() {
-  let featuredJobs: JobPublicResponse[] = []
+export default function HomePage() {
+  const [featuredJobs, setFeaturedJobs] = useState<JobPublicResponse[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  try {
-    const res = await publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", {
+  useEffect(() => {
+    publicFetch<PaginatedResponse<JobPublicResponse>>("/jobs", {
       params: { page: "1", page_size: "3" },
     })
-    featuredJobs = res.data
-  } catch {
-    // backend unavailable — render with empty grid
-  }
+      .then((res) => setFeaturedJobs(res.data))
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
+  }, [])
 
   return (
     <div>
@@ -49,7 +54,11 @@ export default async function HomePage() {
             We&apos;re Hiring
           </h2>
 
-          {featuredJobs.length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : featuredJobs.length === 0 ? (
             <p className="text-center text-muted-foreground">
               No open positions at the moment. Check back soon!
             </p>
