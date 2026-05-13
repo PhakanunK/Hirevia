@@ -118,6 +118,10 @@ export interface ApplicationSubmitResponse {
   tracking_token: string
 }
 
+export interface UploadResponse {
+  url: string
+}
+
 export interface ApplicationStatusUpdate {
   status: ApplicationStatus
   interview_date?: string | null

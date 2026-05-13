@@ -6,12 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { publicFetch, publicFetchFormData } from "@/lib/api"
-import type { JobPublicResponse, ApplicationSubmitResponse } from "@/lib/types"
+import type { JobPublicResponse, ApplicationSubmitResponse, UploadResponse } from "@/lib/types"
 import { Upload, Loader2 } from "lucide-react"
-
-interface UploadResponse {
-  url: string
-}
 
 export default function ApplyPage({
   params,
