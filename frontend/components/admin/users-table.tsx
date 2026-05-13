@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -30,14 +29,13 @@ import { PageLoader, PageError } from "@/components/ui/page-states"
 import { USER_STATUS_CONFIG, USER_ROLE_CONFIG, PAGE_SIZE_TABLE } from "@/lib/utils/constants"
 import { getUsers } from "@/lib/actions/user.action"
 import type { UserResponse } from "@/lib/models/user.model"
-import { Search, Eye, MoreHorizontal } from "lucide-react"
+import { Eye, MoreHorizontal } from "lucide-react"
 
 export function UsersTable() {
   const [users, setUsers] = useState<UserResponse[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
@@ -49,7 +47,6 @@ export function UsersTable() {
       const data = await getUsers({
         page: currentPage,
         page_size: PAGE_SIZE_TABLE,
-        keyword: search || undefined,
         role: roleFilter !== "all" ? roleFilter : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
       })
@@ -60,7 +57,7 @@ export function UsersTable() {
     } finally {
       setIsLoading(false)
     }
-  }, [currentPage, search, roleFilter, statusFilter])
+  }, [currentPage, roleFilter, statusFilter])
 
   useEffect(() => {
     fetchUsers()
@@ -73,15 +70,6 @@ export function UsersTable() {
     <>
       {/* Filters */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by username or email"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
-            className="pl-10"
-          />
-        </div>
         <div className="flex gap-4">
           <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setCurrentPage(1) }}>
             <SelectTrigger className="w-[140px]">
