@@ -174,39 +174,70 @@ hirevia/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/
-│   │   │   ├── admin/      # JWT-protected admin routes
-│   │   │   └── public/     # Public applicant routes
-│   │   ├── core/           # Config, database, dependencies
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── repositories/   # Database queries
-│   │   ├── schemas/        # Pydantic request/response models
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Security, storage, email helpers
+│   │   │   ├── admin/          # JWT-protected admin routes
+│   │   │   └── public/         # Public applicant routes
+│   │   ├── core/               # Config, database, dependencies
+│   │   ├── models/             # SQLAlchemy ORM models
+│   │   ├── repositories/       # Database queries
+│   │   ├── schemas/            # Pydantic request/response models
+│   │   ├── services/           # Business logic
+│   │   └── utils/              # Security, storage, email helpers
 │   ├── scripts/
-│   │   └── seed_admin.py   # Creates initial head admin
-│   ├── init.sql            # Database schema
+│   │   └── seed_admin.py       # Creates initial head admin
 │   └── .env.example
 └── frontend/
-    └── app/
-        ├── (public)/       # Public applicant site
-        └── (admin)/        # HR admin dashboard
+    ├── app/
+    │   ├── (public)/           # Public applicant site
+    │   └── admin/              # HR admin dashboard (JWT-guarded layout)
+    ├── components/
+    │   ├── admin/              # Smart components (jobs-table, users-table, job-form-fields)
+    │   └── ui/                 # shadcn/ui primitives
+    ├── contexts/               # AdminContext — current user shared across dashboard
+    ├── hooks/                  # use-mobile, use-toast
+    └── lib/
+        ├── api.ts              # HTTP client (publicFetch, adminFetch)
+        ├── actions/            # API call functions, one file per domain
+        ├── models/             # TypeScript interfaces, one file per domain
+        └── utils/              # constants.ts, format.utils.ts
 ```
 
 ---
 
 ## Architecture
 
-The backend follows a layered architecture:
+### Backend
+
+Strict layered architecture — each layer has one responsibility and communicates only with the layer below it:
 
 ```
 Route → Service → Repository → Database
 ```
 
-- **Routes** — handle HTTP requests/responses, catch service exceptions
-- **Services** — business logic, raise plain Python exceptions
-- **Repositories** — database queries only, no business logic
-- **Models** — SQLAlchemy ORM, never exposed directly to API
-- **Schemas** — Pydantic models for request/response validation
+| Layer | Responsibility |
+|-------|---------------|
+| **Routes** | HTTP request/response, parameter parsing, exception-to-status-code mapping |
+| **Services** | Business logic only — raises plain Python exceptions, no FastAPI imports |
+| **Repositories** | Database queries only — accepts `dict`, no business logic |
+| **Models** | SQLAlchemy ORM definitions, never exposed directly to the API |
+| **Schemas** | Pydantic models for request validation and response serialization |
+
+### Frontend
+
+Strict layered architecture — pages never call the HTTP client directly:
+
+```
+Page / Component → Action → API Client → Backend
+```
+
+| Layer | Location | Responsibility |
+|-------|----------|---------------|
+| **Pages** | `app/` | UI rendering, local state, user interaction |
+| **Actions** | `lib/actions/` | All API calls — one file per domain (`job`, `application`, `user`, `dashboard`, `public`) |
+| **API client** | `lib/api.ts` | Low-level HTTP client (`publicFetch`, `adminFetch`), token management |
+| **Models** | `lib/models/` | TypeScript interfaces split by domain (`job`, `application`, `user`, `dashboard`) |
+| **Utils** | `lib/utils/` | Pure helpers — `constants.ts` for config/status maps, `format.utils.ts` for display formatting |
+
+Shared UI state (current logged-in user) is provided via `contexts/admin-context.tsx` to all dashboard pages through the layout.
 
 ---
 
