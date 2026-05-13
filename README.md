@@ -1,24 +1,196 @@
-# HireFlow
-Lightweight Applicant Tracking &amp; Hiring Pipeline System
+# Hirevia
+Lightweight Applicant Tracking & Hiring Pipeline System
 
 ## Overview
 
-This is a personal full-stack project built for learning and practicing real-world system design and backend development concepts.
+A personal full-stack project built for learning and practicing real-world system design and backend development concepts.
 
-The project simulates a lightweight Applicant Tracking System, where HR can manage job postings and applicant pipelines, while applicants can apply for jobs and track their application status via a secure token-based link.
+Hirevia simulates a lightweight Applicant Tracking System (ATS) with two sides:
+- **Public site** — applicants browse open jobs, submit applications, and track their status via a magic link (no login needed)
+- **Admin dashboard** — HR admins manage job postings, review applications, and move candidates through the hiring pipeline
 
-The main goal of this project is to explore how production-style systems are designed and implemented, including authentication flows, role separation, database design, and file handling using external storage.
+The main goal is to explore how production-style systems are designed and implemented, including JWT authentication, role-based permissions, database design, file storage, and email notifications.
 
-This project is not intended for production use, but rather as a hands-on study of building scalable backend systems with a modern full-stack architecture.
+> This project is not intended for production use. It is a hands-on study of building scalable backend systems with a modern full-stack architecture.
+
+---
 
 ## Tech Stack
 
-- Frontend: Next.js
-- Backend: FastAPI
-- Database: PostgreSQL
-- Storage: Supabase Storage
-- Deployment: Docker
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 14 + shadcn/ui |
+| Backend | FastAPI + SQLAlchemy |
+| Database | PostgreSQL (Supabase) |
+| Storage | Supabase Storage |
+| Email | Resend |
+| Deployment | Docker |
+
+---
+
+## Features
+
+### Public
+- Browse open job listings with filters (job type, salary range, urgent)
+- View job details and apply with resume upload
+- Track application status via magic link token (no login needed)
+
+### Admin
+- JWT authentication with role-based access (`head_admin` / `admin`)
+- Dashboard with stats, upcoming interviews, and latest applications
+- Full job management (create, update, archive, status pipeline)
+- Application pipeline management (applied → screening → interview → offer / rejected)
+- Resume upload to Supabase Storage
+- Email notifications to applicants on status changes
+
+---
 
 ## Design
-Figma (System Design): https://www.figma.com/board/SQcDDDLYOwstwrPUvAz3Z8/HireFlow?node-id=0-1&t=ktyvTp8iRldbvMfm-1
-Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/HireFlow-UX-UI?m=auto&t=ZMJHvGdFCAaKHE75-6
+The UX/UI was designed in Figma before development:
+- Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/Hirevia-UX-UI?node-id=4604-13287&t=l5pH9GDputxae44F-1
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Docker + Docker Compose
+- Supabase account (free tier works)
+- Resend account (free tier works)
+
+---
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/PhakanunK/Hirevia.git
+cd Hirevia
+```
+
+### 2. Set up Supabase
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **SQL Editor** and run the contents of `database-init/init.sql`
+3. Go to **Storage** → create a new bucket named `resumes` → set to **Public**
+4. Add a storage policy to allow public uploads:
+```sql
+CREATE POLICY "Allow public uploads" ON storage.objects
+FOR INSERT TO anon
+WITH CHECK (bucket_id = 'resumes');
+```
+5. Go to **Settings → API** and note your **Project URL** and **anon public key**
+
+### 3. Set up Resend
+1. Create a free account at [resend.com](https://resend.com)
+2. Get your API key from the dashboard
+3. For development, use `onboarding@resend.dev` as the from address (emails may go to spam)
+4. For production, verify your own domain in Resend settings
+
+### 4. Configure environment variables
+Copy the example file and fill in your values:
+```bash
+cp backend/.env.example backend/.env
+```
+
+Edit `backend/.env`:
+```env
+# Database
+DATABASE_URL=postgresql://postgres:your_password@db.your_project.supabase.co:5432/postgres
+
+# JWT
+SECRET_KEY=your_secret_key_here_make_it_long_and_random
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+# Supabase Storage
+SUPABASE_URL=https://your_project.supabase.co
+SUPABASE_KEY=your_anon_public_key
+SUPABASE_BUCKET=resumes
+
+# Email
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL=onboarding@resend.dev
+
+# App
+DEBUG=True
+FRONTEND_URL=http://localhost:3000
+PAGE_SIZE_CARD=6
+PAGE_SIZE_TABLE=10
+MAX_PAGE_SIZE=50
+```
+
+### 5. Run with Docker
+```bash
+docker-compose up --build
+```
+
+The first run will automatically create a default head admin account:
+- **Email:** `admin@hirevia.com`
+- **Password:** `Admin123`
+
+> ⚠️ Change the default password immediately after first login!
+
+---
+
+## API Documentation
+
+Once running, visit:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+> API docs are only available when `DEBUG=True`
+
+---
+
+## Project Structure
+
+```
+hirevia/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/
+│   │   │   ├── admin/      # JWT-protected admin routes
+│   │   │   └── public/     # Public applicant routes
+│   │   ├── core/           # Config, database, dependencies
+│   │   ├── models/         # SQLAlchemy ORM models
+│   │   ├── repositories/   # Database queries
+│   │   ├── schemas/        # Pydantic request/response models
+│   │   ├── services/       # Business logic
+│   │   └── utils/          # Security, storage, email helpers
+│   ├── scripts/
+│   │   └── seed_admin.py   # Creates initial head admin
+│   ├── init.sql            # Database schema
+│   └── .env.example
+└── frontend/
+    └── app/
+        ├── (public)/       # Public applicant site
+        └── (admin)/        # HR admin dashboard
+```
+
+---
+
+## Architecture
+
+The backend follows a layered architecture:
+
+```
+Route → Service → Repository → Database
+```
+
+- **Routes** — handle HTTP requests/responses, catch service exceptions
+- **Services** — business logic, raise plain Python exceptions
+- **Repositories** — database queries only, no business logic
+- **Models** — SQLAlchemy ORM, never exposed directly to API
+- **Schemas** — Pydantic models for request/response validation
+
+---
+
+## Default Admin Account
+
+On first startup, a head admin is automatically created:
+
+| Field | Value |
+|-------|-------|
+| Email | `admin@hirevia.com` |
+| Password | `Admin123` |
+| Role | `head_admin` |
+
+> ⚠️ Change this password after first login!
