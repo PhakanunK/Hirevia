@@ -46,7 +46,7 @@ class UserService:
             update_data["password_hash"] = hash_password(update_data.pop("password"))
         if "email" in update_data:
             existing = self.repo.get_by_email(update_data["email"])
-            if existing:
+            if existing and existing.id != user_id:
                 raise EmailAlreadyExists()
         return self.repo.update(user, update_data)
     
