@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { adminFetch } from "@/lib/api"
 import { formatJobType, formatSalary } from "@/lib/format"
-import type { Job } from "@/lib/types"
+import type { JobAdminResponse } from "@/lib/types"
 import { Loader2 } from "lucide-react"
 
 export default function JobDetailPage({
@@ -17,8 +17,7 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
-  const [job, setJob] = useState<Job | null>(null)
-  const [applicationCount, setApplicationCount] = useState(0)
+  const [job, setJob] = useState<JobAdminResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isArchiving, setIsArchiving] = useState(false)
@@ -28,9 +27,8 @@ export default function JobDetailPage({
       try {
         setIsLoading(true)
         setError(null)
-        const data = await adminFetch<Job & { application_count?: number }>(`/jobs/${id}`)
+        const data = await adminFetch<JobAdminResponse>(`/jobs/${id}`)
         setJob(data)
-        setApplicationCount(data.application_count || 0)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load job")
       } finally {
@@ -79,14 +77,14 @@ export default function JobDetailPage({
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">Jobs</h1>
+      <h1 className="mb-8 text-2xl font-bold">Job Detail</h1>
 
       <div className="mb-8">
         <h2 className="mb-4 text-xl font-bold text-primary">{job.title}</h2>
 
         <div className="mb-4 space-y-1 text-sm text-muted-foreground">
-          <p>Type: {formatJobType(job.type)}</p>
-          <p>Salary: {formatSalary(job.salary_min, job.salary_max)}</p>
+          <p>Type: {formatJobType(job.job_type)}</p>
+          <p>Salary: {formatSalary(job.min_salary, job.max_salary)}</p>
           <p>Open positions: {job.headcount}</p>
         </div>
 
@@ -94,38 +92,33 @@ export default function JobDetailPage({
 
         <div className="mb-6">
           <h3 className="mb-2 font-semibold">Requirements:</h3>
-          <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            {job.requirements.map((req, index) => (
-              <li key={index}>{req}</li>
-            ))}
-          </ul>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {job.requirements}
+          </p>
         </div>
 
         <div className="mb-6 text-sm text-muted-foreground">
           <p>Status: {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}</p>
           <p>
-            Posted on:{" "}
+            Created:{" "}
             {new Date(job.created_at).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric",
             })}
           </p>
+          {job.published_at && (
+            <p>
+              Published:{" "}
+              {new Date(job.published_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          )}
           {job.urgent && <Badge variant="destructive" className="mt-2">Urgent</Badge>}
         </div>
-
-        <div className="mb-4">
-          <span className="text-sm text-muted-foreground">Created by: </span>
-          <span className="text-sm">{job.created_by}</span>
-        </div>
-
-        {applicationCount > 0 && (
-          <div className="mb-6">
-            <p className="text-sm text-muted-foreground">
-              Applications: {applicationCount}
-            </p>
-          </div>
-        )}
 
         <div className="flex gap-2">
           <Button asChild variant="outline">
@@ -133,7 +126,7 @@ export default function JobDetailPage({
               View Applications
             </Link>
           </Button>
-          {job.status !== "closed" && (
+          {!job.is_archived && job.status !== "closed" && (
             <>
               <Button asChild>
                 <Link href={`/admin/jobs/${job.id}/edit`}>Edit</Link>
