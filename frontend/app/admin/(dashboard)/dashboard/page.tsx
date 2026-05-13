@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getDashboard } from "@/lib/actions/dashboard.action"
-import type { DashboardResponse } from "@/lib/models/user.model"
+import type { DashboardResponse } from "@/lib/models/dashboard.model"
 import { Briefcase, AlertTriangle, FileText, CalendarDays, Users, CheckCircle, Clock, Loader2 } from "lucide-react"
 
 export default function DashboardPage() {
