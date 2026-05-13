@@ -7,7 +7,7 @@ from app.api.v1.admin import auth, users, jobs as admin_jobs, applications as ad
 from app.api.v1.public import jobs as public_jobs, apply, status, upload
 
 app = FastAPI(
-    title="HireFlow ATS",
+    title="Hirevia ATS",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None
 )
