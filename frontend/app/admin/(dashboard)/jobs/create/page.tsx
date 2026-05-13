@@ -29,7 +29,7 @@ export default function CreateJobPage() {
     requirements: "",
     headcount: 1,
     min_salary: "",             // was "salary_min"
-    max_salary: "",             // was "salary_max"
+    max_salary: "",
     urgent: false,
     // NO status — backend always forces draft on create
   })
@@ -46,8 +46,8 @@ export default function CreateJobPage() {
         description: formData.description,
         requirements: formData.requirements, // plain string, NOT split into array
         headcount: formData.headcount,
-        min_salary: parseInt(formData.min_salary),
-        max_salary: formData.max_salary ? parseInt(formData.max_salary) : null,
+        min_salary: parseInt(formData.min_salary) * 1000,
+        max_salary: formData.max_salary ? parseInt(formData.max_salary) * 1000 : null,
         urgent: formData.urgent,
       }
 
@@ -169,11 +169,12 @@ export default function CreateJobPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="min_salary">Salary Min</Label>
+                <Label htmlFor="min_salary">Salary Min (k)</Label>
                 <Input
                   id="min_salary"
                   type="number"
-                  placeholder="e.g. 50000"
+                  min={1}
+                  placeholder="e.g. 25"
                   value={formData.min_salary}
                   onChange={(e) =>
                     setFormData({ ...formData, min_salary: e.target.value })
@@ -182,11 +183,12 @@ export default function CreateJobPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="max_salary">Salary Max (optional)</Label>
+                <Label htmlFor="max_salary">Salary Max (k, optional)</Label>
                 <Input
                   id="max_salary"
                   type="number"
-                  placeholder="e.g. 80000"
+                  min={1}
+                  placeholder="e.g. 50"
                   value={formData.max_salary}
                   onChange={(e) =>
                     setFormData({ ...formData, max_salary: e.target.value })

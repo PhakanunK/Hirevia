@@ -7,8 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { adminFetch } from "@/lib/api"
 import { formatJobType, formatSalary } from "@/lib/format"
-import type { JobAdminResponse } from "@/lib/types"
+import type { JobAdminResponse, JobStatus } from "@/lib/types"
 import { Loader2 } from "lucide-react"
+
+const STATUS_COLORS: Record<JobStatus, string> = {
+  draft: "bg-gray-100 text-gray-800 border-gray-200",
+  open: "bg-green-100 text-green-800 border-green-200",
+  closed: "bg-red-100 text-red-800 border-red-200",
+}
 
 export default function JobDetailPage({
   params,
@@ -21,6 +27,7 @@ export default function JobDetailPage({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isArchiving, setIsArchiving] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -38,6 +45,21 @@ export default function JobDetailPage({
 
     fetchJob()
   }, [id])
+
+  const handleStatusChange = async (newStatus: JobStatus) => {
+    setIsUpdatingStatus(true)
+    try {
+      const updated = await adminFetch<JobAdminResponse>(`/jobs/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      })
+      setJob(updated)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status")
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
 
   const handleArchive = async () => {
     try {
@@ -98,7 +120,12 @@ export default function JobDetailPage({
         </div>
 
         <div className="mb-6 text-sm text-muted-foreground">
-          <p>Status: {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}</p>
+          <div className="mb-1 flex items-center gap-2">
+            <span>Status:</span>
+            <Badge className={STATUS_COLORS[job.status]}>
+              {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+            </Badge>
+          </div>
           <p>
             Created:{" "}
             {new Date(job.created_at).toLocaleDateString("en-US", {
@@ -120,22 +147,36 @@ export default function JobDetailPage({
           {job.urgent && <Badge variant="destructive" className="mt-2">Urgent</Badge>}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
             <Link href={`/admin/applications?job_id=${job.id}`}>
               View Applications
             </Link>
           </Button>
-          {!job.is_archived && job.status !== "closed" && (
+          {!job.is_archived && (
             <>
-              <Button asChild>
+              <Button asChild variant="outline">
                 <Link href={`/admin/jobs/${job.id}/edit`}>Edit</Link>
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleArchive}
-                disabled={isArchiving}
-              >
+              {job.status === "draft" && (
+                <Button onClick={() => handleStatusChange("open")} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Publish
+                </Button>
+              )}
+              {job.status === "open" && (
+                <Button variant="outline" onClick={() => handleStatusChange("closed")} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Close
+                </Button>
+              )}
+              {job.status === "closed" && (
+                <Button variant="outline" onClick={() => handleStatusChange("open")} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Reopen
+                </Button>
+              )}
+              <Button variant="destructive" onClick={handleArchive} disabled={isArchiving}>
                 {isArchiving ? "Archiving..." : "Archive"}
               </Button>
             </>

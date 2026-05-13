@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { adminFetch } from "@/lib/api"
-import type { JobAdminResponse, JobUpdate, JobStatus } from "@/lib/types"
+import type { JobAdminResponse, JobUpdate } from "@/lib/types"
 import { Loader2 } from "lucide-react"
 
 export default function EditJobPage({
@@ -40,7 +40,6 @@ export default function EditJobPage({
     min_salary: "",
     max_salary: "",
     urgent: false,
-    status: "draft" as JobStatus,
   })
 
   useEffect(() => {
@@ -56,10 +55,9 @@ export default function EditJobPage({
           description: data.description,
           requirements: data.requirements, // plain string, no join needed
           headcount: data.headcount,
-          min_salary: data.min_salary.toString(),
-          max_salary: data.max_salary?.toString() || "",
+          min_salary: String(data.min_salary / 1000),
+          max_salary: data.max_salary ? String(data.max_salary / 1000) : "",
           urgent: data.urgent,
-          status: data.status,
         })
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load job")
@@ -71,7 +69,7 @@ export default function EditJobPage({
     fetchJob()
   }, [id])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
@@ -83,8 +81,8 @@ export default function EditJobPage({
         description: formData.description,
         requirements: formData.requirements, // plain string, no split needed
         headcount: formData.headcount,
-        min_salary: parseInt(formData.min_salary),
-        max_salary: formData.max_salary ? parseInt(formData.max_salary) : null,
+        min_salary: parseInt(formData.min_salary) * 1000,
+        max_salary: formData.max_salary ? parseInt(formData.max_salary) * 1000 : null,
         urgent: formData.urgent,
       }
 
@@ -98,21 +96,6 @@ export default function EditJobPage({
       setError(err instanceof Error ? err.message : "Failed to update job")
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleStatusChange = async (newStatus: JobStatus) => {
-    try {
-      setFormData((prev) => ({ ...prev, status: newStatus }))
-      await adminFetch(`/jobs/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: newStatus }),
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status")
-      if (job) {
-        setFormData((prev) => ({ ...prev, status: job.status }))
-      }
     }
   }
 
@@ -238,42 +221,27 @@ export default function EditJobPage({
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="min_salary">Salary Min</Label>
+                <Label htmlFor="min_salary">Salary Min (k)</Label>
                 <Input
                   id="min_salary"
                   type="number"
+                  min={1}
+                  placeholder="e.g. 25"
                   value={formData.min_salary}
                   onChange={(e) => setFormData({ ...formData, min_salary: e.target.value })}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="max_salary">Salary Max (optional)</Label>
+                <Label htmlFor="max_salary">Salary Max (k, optional)</Label>
                 <Input
                   id="max_salary"
                   type="number"
+                  min={1}
+                  placeholder="e.g. 50"
                   value={formData.max_salary}
                   onChange={(e) => setFormData({ ...formData, max_salary: e.target.value })}
                 />
-              </div>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleStatusChange(value as JobStatus)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
