@@ -92,7 +92,7 @@ function ApplicationsContent() {
       }
       if (statusFilter !== "all") params.status = statusFilter
       if (selectedJob !== "all") params.job_id = selectedJob
-      if (debouncedSearch) params.search = debouncedSearch
+      if (debouncedSearch) params.keyword = debouncedSearch
 
       const res = await adminFetch<PaginatedResponse<ApplicationResponse>>(
         "/applications",

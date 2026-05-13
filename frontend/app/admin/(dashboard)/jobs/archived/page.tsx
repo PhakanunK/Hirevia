@@ -50,7 +50,7 @@ export default function ArchivedJobsPage() {
           page: String(currentPage),
           page_size: String(PAGE_SIZE_TABLE),
           is_archived: "true",
-          ...(search && { title: search }),
+          ...(search && { keyword: search }),
           ...(typeFilter !== "all" && { job_type: typeFilter }),
         },
       })
@@ -158,7 +158,7 @@ export default function ArchivedJobsPage() {
                 <TableRow key={job.id}>
                   <TableCell className="font-medium">{job.title}</TableCell>
                   <TableCell>{formatJobType(job.job_type)}</TableCell>
-                  <TableCell>{formatSalaryCompact(job.min_salary, job.max_salary)}</TableCell>
+                  <TableCell>{formatSalaryCompact(job.min_salary, job.max_salary ?? undefined)}</TableCell>
                   <TableCell>{job.headcount}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">Archived</Badge>

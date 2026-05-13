@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Invalid email or password')
+        throw new Error(errorData.detail || errorData.message || 'Invalid email or password')
       }
 
       const data = await response.json()

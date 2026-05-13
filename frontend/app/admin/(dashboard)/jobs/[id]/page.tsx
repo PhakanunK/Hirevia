@@ -106,7 +106,7 @@ export default function JobDetailPage({
 
         <div className="mb-4 space-y-1 text-sm text-muted-foreground">
           <p>Type: {formatJobType(job.job_type)}</p>
-          <p>Salary: {formatSalary(job.min_salary, job.max_salary)}</p>
+          <p>Salary: {formatSalary(job.min_salary, job.max_salary ?? undefined)}</p>
           <p>Open positions: {job.headcount}</p>
         </div>
 
