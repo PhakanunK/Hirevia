@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useDashboard } from "@/hooks/use-dashboard"
-import { Briefcase, AlertTriangle, FileText, CalendarDays, Users, CheckCircle, Clock, Loader2 } from "lucide-react"
+import { Briefcase, AlertTriangle, FileText, CalendarDays, UserX, CheckCircle, Clock, Loader2 } from "lucide-react"
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useDashboard()
@@ -156,7 +156,7 @@ export default function DashboardPage() {
               { icon: Clock,    iconCls: "bg-yellow-100 text-yellow-600", label: "Screening",  value: data.summary.screening },
               { icon: CalendarDays, iconCls: "bg-purple-100 text-purple-600", label: "Interview", value: data.summary.interview },
               { icon: CheckCircle,  iconCls: "bg-green-100 text-green-600",   label: "Offer",     value: data.summary.offer },
-              { icon: Users,    iconCls: "bg-gray-100 text-gray-600",     label: "Rejected",   value: data.summary.rejected },
+              { icon: UserX,    iconCls: "bg-gray-100 text-gray-600",     label: "Rejected",   value: data.summary.rejected },
             ].map(({ icon: Icon, iconCls, label, value }) => (
               <div key={label} className="flex items-center gap-3 rounded-lg border p-4">
                 <div className={`rounded-lg p-2 ${iconCls}`}>
