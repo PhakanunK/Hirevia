@@ -125,7 +125,7 @@ export default function ApplicationDetailPage({
               {application.portfolio_url && (
                 <div className="flex items-center gap-2 text-sm">
                   <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="truncate text-primary hover:underline">
                     Portfolio: {application.portfolio_url}
                   </a>
                 </div>

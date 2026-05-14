@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminFooter } from "@/components/admin-footer"
 import { AdminContext } from "@/contexts/admin-context"
@@ -14,7 +14,6 @@ export default function AdminDashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<UserResponse | null>(null)
@@ -38,7 +37,7 @@ export default function AdminDashboardLayout({
         router.push("/admin")
       })
       .finally(() => setIsLoading(false))
-  }, [router, pathname])
+  }, [router])
 
   if (isLoading) {
     return (

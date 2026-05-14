@@ -104,7 +104,7 @@ export const publicFetchFormData = async <T = unknown>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`)
+    throw new Error(errorData.detail || errorData.message || `API Error: ${response.status} ${response.statusText}`)
   }
 
   return response.json()
