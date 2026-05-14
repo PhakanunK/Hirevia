@@ -24,6 +24,7 @@ class DashboardService:
             ],
             latest_applications=[
                 LatestApplication(
+                    id=a.id,
                     applicant_name=f"{a.first_name} {a.last_name}",
                     job_title=a.job.title,
                     applied_date=a.created_at
