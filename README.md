@@ -39,7 +39,7 @@ The main goal is to explore how production-style systems are designed and implem
 - JWT authentication with role-based access (`head_admin` / `admin`)
 - Dashboard with stats, upcoming interviews, and latest applications
 - Full job management (create, update, archive, status pipeline)
-- Application pipeline management (applied → screening → interview → offer / rejected)
+- Application pipeline management (applied → screening → interview → offer / rejected, offer → declined)
 - Resume upload to Supabase Storage
 - Email notifications to applicants on status changes
 
