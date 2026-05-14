@@ -45,6 +45,40 @@ The main goal is to explore how production-style systems are designed and implem
 
 ---
 
+## Screenshots
+
+### Public Site
+
+| Careers | Job Detail |
+|---|---|
+| ![Careers](screenshots/HireviaPublicCareers.png) | ![Job Detail](screenshots/HireviaPublicCareerId.png) |
+
+| Apply | Application Status — Applied |
+|---|---|
+| ![Apply](screenshots/HireviaPublicApply.png) | ![Status Applied](screenshots/HireviaPublicStatusApplied.png) |
+
+**Application Status — Interview (with scheduled date)**
+
+![Status Interview](screenshots/HireviaPublicStatusInterview.png)
+
+---
+
+### Admin Dashboard
+
+| Dashboard (top) | Dashboard (bottom) |
+|---|---|
+| ![Dashboard Top](screenshots/HireviaAdminDashboardTop.png) | ![Dashboard Bottom](screenshots/HireviaAdminDashboardBot.png) |
+
+| Job Management | Application Management |
+|---|---|
+| ![Job Management](screenshots/HireviaAdminJobManagement.png) | ![Application Management](screenshots/HireviaAdminApplicationManagement.png) |
+
+**Application Detail — pipeline view**
+
+![Application View](screenshots/HireviaAdminApplicationView.png)
+
+---
+
 ## Design
 The UX/UI was designed in Figma before development:
 - Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/Hirevia-UX-UI?node-id=4604-13287&t=l5pH9GDputxae44F-1
