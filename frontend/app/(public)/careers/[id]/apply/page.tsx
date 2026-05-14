@@ -19,7 +19,7 @@ export default function ApplyPage({
 
   if (isLoadingJob) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-8">
+      <div className="container mx-auto max-w-2xl px-4 py-24">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -29,7 +29,7 @@ export default function ApplyPage({
 
   if (jobError || !job) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-8 text-center">
+      <div className="container mx-auto max-w-2xl px-4 py-24 text-center">
         <p className="mb-4 text-destructive">{jobError || "Job not found"}</p>
         <Button onClick={retryJob}>Try Again</Button>
       </div>
@@ -38,14 +38,14 @@ export default function ApplyPage({
 
   if (job.status !== "open") {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-8 text-center">
+      <div className="container mx-auto max-w-2xl px-4 py-24 text-center">
         <p className="text-muted-foreground">This position is no longer accepting applications.</p>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8">
+    <div className="container mx-auto max-w-2xl px-4 py-24">
       <h1 className="mb-2 text-center text-2xl font-bold">Submit your application</h1>
       <p className="mb-8 text-center font-medium text-primary">{job.title}</p>
 
