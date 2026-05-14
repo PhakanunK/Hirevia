@@ -14,6 +14,7 @@ export const APPLICATION_STATUS_CONFIG: Record<ApplicationStatus, { color: strin
   interview: { color: "bg-purple-100 text-purple-800 border-purple-200", label: "Interview" },
   offer:     { color: "bg-green-100 text-green-800 border-green-200",    label: "Offer" },
   rejected:  { color: "bg-red-100 text-red-800 border-red-200",          label: "Rejected" },
+  declined:  { color: "bg-orange-100 text-orange-800 border-orange-200", label: "Declined" },
 }
 
 export const NEXT_APPLICATION_STATUS: Record<ApplicationStatus, ApplicationStatus | null> = {
@@ -22,6 +23,7 @@ export const NEXT_APPLICATION_STATUS: Record<ApplicationStatus, ApplicationStatu
   interview: "offer",
   offer:     null,
   rejected:  null,
+  declined:  null,
 }
 
 export const JOB_STATUS_COLORS: Record<JobStatus, string> = {

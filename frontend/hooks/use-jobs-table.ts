@@ -41,7 +41,11 @@ export function useJobsTable(isArchived: boolean) {
   const handleArchive = async (jobId: number) => {
     try {
       await archiveJob(jobId)
-      setJobs((prev) => prev.filter((j) => j.id !== jobId))
+      if (jobs.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1)
+      } else {
+        fetchJobs()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive job")
     }

@@ -23,14 +23,16 @@ def send_status_update(to_email: str, first_name: str, job_title: str, status: s
         "screening": "Your application is being reviewed by our team.",
         "interview": f"You've been selected for an interview on {interview_date}." if interview_date else "You've been selected for an interview.",
         "offer": "Congratulations! We'd like to offer you the position.",
-        "rejected": "Thank you for your interest. We've decided to move forward with other candidates."
+        "rejected": "Thank you for your interest. We've decided to move forward with other candidates.",
+        "declined": "We've noted that you've declined our offer. Thank you for your time and we wish you all the best.",
     }
 
     subjects = {
         "screening": f"Application Update — {job_title}",
         "interview": f"Interview Invitation — {job_title}",
         "offer": f"Congratulations! — {job_title}",
-        "rejected": f"Application Update — {job_title}"
+        "rejected": f"Application Update — {job_title}",
+        "declined": f"Application Update — {job_title}",
     }
 
     resend.Emails.send({
