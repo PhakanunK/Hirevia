@@ -9,7 +9,7 @@ import { formatJobType, formatSalaryCompact } from "@/lib/utils/format.utils"
 import { Loader2 } from "lucide-react"
 
 export default function HomePage() {
-  const { jobs, isLoading } = useFeaturedJobs()
+  const { jobs, isLoading, error } = useFeaturedJobs()
 
   return (
     <div>
@@ -44,6 +44,11 @@ export default function HomePage() {
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
+          ) : error ? (
+            <p className="text-center text-muted-foreground">
+              Unable to load positions right now.{" "}
+              <Link href="/careers" className="underline">Browse all jobs</Link>
+            </p>
           ) : jobs.length === 0 ? (
             <p className="text-center text-muted-foreground">
               No open positions at the moment. Check back soon!
