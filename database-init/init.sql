@@ -2,7 +2,7 @@ CREATE TYPE user_status AS ENUM ('active', 'suspended');
 CREATE TYPE user_role AS ENUM ('head_admin', 'admin');
 CREATE TYPE job_type AS ENUM ('full_time', 'internship', 'contract');
 CREATE TYPE job_status AS ENUM ('open', 'closed', 'draft');
-CREATE TYPE application_status AS ENUM ('applied', 'screening', 'interview', 'offer', 'rejected');
+CREATE TYPE application_status AS ENUM ('applied', 'screening', 'interview', 'offer', 'rejected', 'declined');
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,

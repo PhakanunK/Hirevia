@@ -97,8 +97,9 @@ class ApplicationService:
             ApplicationStatus.APPLIED: [ApplicationStatus.SCREENING, ApplicationStatus.REJECTED],
             ApplicationStatus.SCREENING: [ApplicationStatus.INTERVIEW, ApplicationStatus.REJECTED],
             ApplicationStatus.INTERVIEW: [ApplicationStatus.OFFER, ApplicationStatus.REJECTED],
-            ApplicationStatus.OFFER: [],
+            ApplicationStatus.OFFER: [ApplicationStatus.DECLINED],
             ApplicationStatus.REJECTED: [],
+            ApplicationStatus.DECLINED: [],
         }
         if status not in valid_transitions[application.status]:
             raise InvalidStatusTransition()
@@ -106,13 +107,14 @@ class ApplicationService:
         if status == ApplicationStatus.REJECTED:
             rejected_at = datetime.now(timezone.utc)
         result = self.repo.update_status(application, status, interview_date, rejected_at=rejected_at)
-        send_status_update(
-            to_email=result.email,
-            first_name=result.first_name,
-            job_title=result.job.title,
-            status=status.value,
-            interview_date=interview_date
-        )
+        if status != ApplicationStatus.DECLINED:
+            send_status_update(
+                to_email=result.email,
+                first_name=result.first_name,
+                job_title=result.job.title,
+                status=status.value,
+                interview_date=interview_date
+            )
         return result
     
     def update_interview_date(self, application_id: int, interview_date: datetime):

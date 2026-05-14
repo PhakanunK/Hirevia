@@ -19,6 +19,7 @@ export function useApplication(id: string) {
   const [showEditInterviewModal, setShowEditInterviewModal] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showDeclineModal, setShowDeclineModal] = useState(false)
   const [pendingStatus, setPendingStatus] = useState<ApplicationStatus | null>(null)
   const [interviewDateInput, setInterviewDateInput] = useState("")
   const [interviewTimeInput, setInterviewTimeInput] = useState("")
@@ -136,6 +137,11 @@ export function useApplication(id: string) {
     setShowRejectModal(false)
   }
 
+  const confirmDecline = async () => {
+    await handleUpdateStatus("declined")
+    setShowDeclineModal(false)
+  }
+
   return {
     application,
     jobTitle,
@@ -145,11 +151,13 @@ export function useApplication(id: string) {
     currentStatus,
     scheduledInterviewDate,
     nextStatus: NEXT_APPLICATION_STATUS[currentStatus],
-    canReject: currentStatus !== "rejected" && currentStatus !== "offer",
+    canReject: currentStatus !== "rejected" && currentStatus !== "offer" && currentStatus !== "declined",
+    canDecline: currentStatus === "offer",
     showInterviewModal, setShowInterviewModal,
     showEditInterviewModal, setShowEditInterviewModal,
     showConfirmModal, setShowConfirmModal,
     showRejectModal, setShowRejectModal,
+    showDeclineModal, setShowDeclineModal,
     pendingStatus,
     interviewDateInput, setInterviewDateInput,
     interviewTimeInput, setInterviewTimeInput,
@@ -159,5 +167,6 @@ export function useApplication(id: string) {
     openEditInterviewModal,
     confirmEditInterview,
     confirmReject,
+    confirmDecline,
   }
 }

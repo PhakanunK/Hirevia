@@ -42,16 +42,17 @@ export default function ApplicationDetailPage({
   const router = useRouter()
   const {
     application, jobTitle, isLoading, error, isUpdating,
-    currentStatus, scheduledInterviewDate, nextStatus, canReject,
+    currentStatus, scheduledInterviewDate, nextStatus, canReject, canDecline,
     showInterviewModal, setShowInterviewModal,
     showEditInterviewModal, setShowEditInterviewModal,
     showConfirmModal, setShowConfirmModal,
     showRejectModal, setShowRejectModal,
+    showDeclineModal, setShowDeclineModal,
     pendingStatus,
     interviewDateInput, setInterviewDateInput,
     interviewTimeInput, setInterviewTimeInput,
     handleMoveToNextStage, confirmStatusChange, confirmInterview,
-    openEditInterviewModal, confirmEditInterview, confirmReject,
+    openEditInterviewModal, confirmEditInterview, confirmReject, confirmDecline,
   } = useApplication(id)
 
   if (isLoading) return <PageLoader />
@@ -141,6 +142,11 @@ export default function ApplicationDetailPage({
                 {canReject && (
                   <Button variant="destructive" onClick={() => setShowRejectModal(true)} disabled={isUpdating}>
                     Reject
+                  </Button>
+                )}
+                {canDecline && (
+                  <Button variant="destructive" onClick={() => setShowDeclineModal(true)} disabled={isUpdating}>
+                    Declined by Applicant
                   </Button>
                 )}
                 <Button variant="outline" asChild>
@@ -291,6 +297,29 @@ export default function ApplicationDetailPage({
             >
               {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reject
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Decline Modal */}
+      <AlertDialog open={showDeclineModal} onOpenChange={setShowDeclineModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Declined</AlertDialogTitle>
+            <AlertDialogDescription>
+              The applicant has declined the offer. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDecline}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isUpdating}
+            >
+              {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

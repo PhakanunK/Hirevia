@@ -1,4 +1,4 @@
-export type ApplicationStatus = "applied" | "screening" | "interview" | "offer" | "rejected"
+export type ApplicationStatus = "applied" | "screening" | "interview" | "offer" | "rejected" | "declined"
 
 export interface ApplicationResponse {
   id: number
