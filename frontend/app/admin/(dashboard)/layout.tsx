@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminFooter } from "@/components/admin-footer"
 import { AdminContext } from "@/contexts/admin-context"
@@ -14,10 +14,13 @@ export default function AdminDashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<UserResponse | null>(null)
+  const didInitialFetch = useRef(false)
 
+  // Initial auth check — runs once on mount
   useEffect(() => {
     const token = localStorage.getItem("access_token")
     if (!token) {
@@ -30,14 +33,34 @@ export default function AdminDashboardLayout({
       .then((user) => {
         setCurrentUser(user)
         setIsAuthenticated(true)
+        didInitialFetch.current = true
       })
       .catch(() => {
-        // Token is invalid or expired — clear it and redirect to login
         localStorage.removeItem("access_token")
         router.push("/admin")
       })
       .finally(() => setIsLoading(false))
   }, [router])
+
+  // Listen for forced logout events dispatched by adminFetch on 401.
+  // Using React router here avoids the hard-reload flicker of window.location.
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setIsAuthenticated(false)
+      router.push("/admin")
+    }
+    window.addEventListener("auth:unauthorized", handleForceLogout)
+    return () => window.removeEventListener("auth:unauthorized", handleForceLogout)
+  }, [router])
+
+  // Re-fetch current user on each navigation so role changes (promotion / demotion)
+  // are reflected in the header without requiring a logout.
+  useEffect(() => {
+    if (!didInitialFetch.current) return
+    getCurrentUser()
+      .then(setCurrentUser)
+      .catch(() => {})
+  }, [pathname])
 
   if (isLoading) {
     return (

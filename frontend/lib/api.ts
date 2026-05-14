@@ -12,7 +12,8 @@ type FetchOptions = RequestInit & {
 const handleUnauthorized = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('access_token')
-    window.location.href = '/admin'
+    sessionStorage.setItem('auth_banner', '1')
+    window.dispatchEvent(new Event('auth:unauthorized'))
   }
 }
 
@@ -75,8 +76,9 @@ export const adminFetch = async <T = unknown>(
   })
 
   if (response.status === 401) {
+    const body = await response.json().catch(() => ({}))
     handleUnauthorized()
-    throw new Error('Unauthorized')
+    throw new Error(body.detail || body.message || 'Unauthorized')
   }
 
   if (!response.ok) {
