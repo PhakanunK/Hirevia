@@ -5,6 +5,7 @@ export interface UpcomingInterview {
 }
 
 export interface LatestApplication {
+  id: number
   applicant_name: string
   job_title: string
   applied_date: string

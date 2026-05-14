@@ -125,7 +125,7 @@ export default function DashboardPage() {
         <CardContent className="space-y-4">
           {data.latest_applications.length > 0 ? (
             data.latest_applications.map((application) => (
-              <div key={`${application.applicant_name}-${application.applied_date}`} className="flex items-center justify-between rounded-lg border p-4">
+              <div key={application.id} className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                   <p className="font-medium">{application.job_title}</p>
                   <p className="text-sm text-muted-foreground">{application.applicant_name}</p>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <Button asChild size="sm">
-                  <Link href="/admin/applications">View All</Link>
+                  <Link href={`/admin/applications/${application.id}`}>View</Link>
                 </Button>
               </div>
             ))
