@@ -32,6 +32,10 @@ export function useApply(jobId: string) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.resume) return
+    if (formData.resume.size > 10 * 1024 * 1024) {
+      setError("Resume file must be 10 MB or smaller.")
+      return
+    }
     setIsSubmitting(true)
     setError(null)
     try {

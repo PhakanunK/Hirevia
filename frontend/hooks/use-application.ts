@@ -94,7 +94,10 @@ export function useApplication(id: string) {
 
   const confirmInterview = async () => {
     if (interviewDateInput && interviewTimeInput) {
-      await handleUpdateStatus("interview", `${interviewDateInput}T${interviewTimeInput}:00`)
+      // Treat user input as local time, convert to UTC ISO string for the backend
+      const parsed = new Date(`${interviewDateInput}T${interviewTimeInput}:00`)
+      if (isNaN(parsed.getTime())) { setError("Invalid date or time."); return }
+      await handleUpdateStatus("interview", parsed.toISOString())
       setShowInterviewModal(false)
       setInterviewDateInput("")
       setInterviewTimeInput("")
@@ -104,7 +107,13 @@ export function useApplication(id: string) {
   const openEditInterviewModal = () => {
     if (scheduledInterviewDate) {
       const date = new Date(scheduledInterviewDate)
-      setInterviewDateInput(date.toISOString().split("T")[0])
+      // Use local date components so users in UTC+ timezones see the correct date
+      const localDate = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+      ].join("-")
+      setInterviewDateInput(localDate)
       setInterviewTimeInput(date.toTimeString().slice(0, 5))
     }
     setShowEditInterviewModal(true)
@@ -112,7 +121,10 @@ export function useApplication(id: string) {
 
   const confirmEditInterview = async () => {
     if (interviewDateInput && interviewTimeInput) {
-      await handleUpdateInterviewDate(`${interviewDateInput}T${interviewTimeInput}:00`)
+      // Treat user input as local time, convert to UTC ISO string for the backend
+      const parsed = new Date(`${interviewDateInput}T${interviewTimeInput}:00`)
+      if (isNaN(parsed.getTime())) { setError("Invalid date or time."); return }
+      await handleUpdateInterviewDate(parsed.toISOString())
       setShowEditInterviewModal(false)
       setInterviewDateInput("")
       setInterviewTimeInput("")

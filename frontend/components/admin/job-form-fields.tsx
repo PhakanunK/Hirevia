@@ -11,10 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import type { JobType } from "@/lib/models/job.model"
 
 export interface JobFormData {
   title: string
-  job_type: string
+  job_type: JobType
   description: string
   requirements: string
   headcount: number
@@ -59,7 +60,7 @@ export function JobFormFields({ data, onChange, disabled }: JobFormFieldsProps) 
         </div>
         <div className="space-y-2">
           <Label htmlFor="job_type">Type</Label>
-          <Select value={data.job_type} onValueChange={(v) => set({ job_type: v })} disabled={disabled}>
+          <Select value={data.job_type} onValueChange={(v) => set({ job_type: v as JobType })} disabled={disabled}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

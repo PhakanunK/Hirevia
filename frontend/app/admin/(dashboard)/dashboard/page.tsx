@@ -94,8 +94,8 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.upcoming_interviews.map((interview, index) => (
-                  <TableRow key={index}>
+                {data.upcoming_interviews.map((interview) => (
+                  <TableRow key={`${interview.applicant_name}-${interview.interview_date}`}>
                     <TableCell className="font-medium">{interview.applicant_name}</TableCell>
                     <TableCell>{interview.job_title}</TableCell>
                     <TableCell>
@@ -124,8 +124,8 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {data.latest_applications.length > 0 ? (
-            data.latest_applications.map((application, index) => (
-              <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+            data.latest_applications.map((application) => (
+              <div key={`${application.applicant_name}-${application.applied_date}`} className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                   <p className="font-medium">{application.job_title}</p>
                   <p className="text-sm text-muted-foreground">{application.applicant_name}</p>
@@ -152,15 +152,15 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
             {[
-              { icon: FileText, color: "blue", label: "Applied", value: data.summary.applied },
-              { icon: Clock, color: "yellow", label: "Screening", value: data.summary.screening },
-              { icon: CalendarDays, color: "purple", label: "Interview", value: data.summary.interview },
-              { icon: CheckCircle, color: "green", label: "Offer", value: data.summary.offer },
-              { icon: Users, color: "gray", label: "Rejected", value: data.summary.rejected },
-            ].map(({ icon: Icon, color, label, value }) => (
+              { icon: FileText, iconCls: "bg-blue-100 text-blue-600",     label: "Applied",    value: data.summary.applied },
+              { icon: Clock,    iconCls: "bg-yellow-100 text-yellow-600", label: "Screening",  value: data.summary.screening },
+              { icon: CalendarDays, iconCls: "bg-purple-100 text-purple-600", label: "Interview", value: data.summary.interview },
+              { icon: CheckCircle,  iconCls: "bg-green-100 text-green-600",   label: "Offer",     value: data.summary.offer },
+              { icon: Users,    iconCls: "bg-gray-100 text-gray-600",     label: "Rejected",   value: data.summary.rejected },
+            ].map(({ icon: Icon, iconCls, label, value }) => (
               <div key={label} className="flex items-center gap-3 rounded-lg border p-4">
-                <div className={`rounded-lg bg-${color}-100 p-2`}>
-                  <Icon className={`h-5 w-5 text-${color}-600`} />
+                <div className={`rounded-lg p-2 ${iconCls}`}>
+                  <Icon className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{value}</p>
