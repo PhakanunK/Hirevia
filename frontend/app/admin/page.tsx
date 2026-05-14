@@ -1,10 +1,33 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useLogin } from "@/hooks/use-login"
+import { ShieldAlert } from "lucide-react"
+
+function SessionBanner() {
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    if (sessionStorage.getItem("auth_banner")) {
+      sessionStorage.removeItem("auth_banner")
+      setShow(true)
+    }
+  }, [])
+
+  if (!show) return null
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>
+        Your session has ended. If your account was suspended, please contact an administrator.
+      </span>
+    </div>
+  )
+}
 
 export default function AdminLoginPage() {
   const { email, setEmail, password, setPassword, isLoading, error, handleSubmit } = useLogin()
@@ -19,6 +42,7 @@ export default function AdminLoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <SessionBanner />
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
