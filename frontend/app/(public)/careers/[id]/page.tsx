@@ -18,7 +18,7 @@ export default function JobDetailPage({
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
+      <div className="container mx-auto max-w-3xl px-4 py-24">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -36,7 +36,7 @@ export default function JobDetailPage({
   }
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-24">
       <div className="mb-8">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h1 className="text-2xl font-bold text-primary">{job.title}</h1>
