@@ -31,7 +31,7 @@ class JobRepository:
         if urgent is not None:
             query = query.filter(Job.urgent == urgent)
         if salary_min is not None:
-            query = query.filter(Job.max_salary >= salary_min)
+            query = query.filter((Job.max_salary == None) | (Job.max_salary >= salary_min))
         if salary_max is not None:
             query = query.filter(Job.min_salary <= salary_max)
         if keyword:

@@ -19,7 +19,7 @@ The main goal is to explore how production-style systems are designed and implem
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 14 + shadcn/ui |
+| Frontend | Next.js (App Router) + React 19 + Tailwind CSS 4 + shadcn/ui |
 | Backend | FastAPI + SQLAlchemy |
 | Database | PostgreSQL (Supabase) |
 | Storage | Supabase Storage |
@@ -45,9 +45,59 @@ The main goal is to explore how production-style systems are designed and implem
 
 ---
 
+## Screenshots
+
+### Public Site
+
+| Careers | Job Detail |
+|---|---|
+| ![Careers](screenshots/HireviaPublicCareers.png) | ![Job Detail](screenshots/HireviaPublicCareerId.png) |
+
+| Apply | Application Status — Applied |
+|---|---|
+| ![Apply](screenshots/HireviaPublicApply.png) | ![Status Applied](screenshots/HireviaPublicStatusApplied.png) |
+
+**Application Status — Interview (with scheduled date)**
+
+![Status Interview](screenshots/HireviaPublicStatusInterview.png)
+
+---
+
+### Admin Dashboard
+
+| Dashboard (top) | Dashboard (bottom) |
+|---|---|
+| ![Dashboard Top](screenshots/HireviaAdminDashboardTop.png) | ![Dashboard Bottom](screenshots/HireviaAdminDashboardBot.png) |
+
+| Job Management | Application Management |
+|---|---|
+| ![Job Management](screenshots/HireviaAdminJobManagement.png) | ![Application Management](screenshots/HireviaAdminApplicationManagement.png) |
+
+**Application Detail — pipeline view**
+
+![Application View](screenshots/HireviaAdminApplicationView.png)
+
+---
+
 ## Design
 The UX/UI was designed in Figma before development:
 - Figma (UX/UI Design): https://www.figma.com/design/Vs4dScPyf4gPfoLXpg4Mkg/Hirevia-UX-UI?node-id=4604-13287&t=l5pH9GDputxae44F-1
+
+---
+
+## Assets & Image Policy
+
+All placeholder images bundled by v0 during initial scaffolding (including `hero-team.jpg` and other stock photos) have been removed from this project to ensure safe use as a portfolio. The only remaining image assets are app icons generated as pure SVG/PNG geometry by v0, which carry no photo licensing concerns.
+
+---
+
+## Tools & AI Used
+
+| Tool | Role |
+|------|------|
+| [Figma](https://figma.com) | UX/UI design and prototyping |
+| [v0](https://v0.dev) | Initial frontend scaffolding and component generation |
+| [Claude Code](https://claude.ai/code) | Frontend audit, fixing API connections from v0 to backend, and minor backend assistance |
 
 ---
 
@@ -85,7 +135,8 @@ WITH CHECK (bucket_id = 'resumes');
 4. For production, verify your own domain in Resend settings
 
 ### 4. Configure environment variables
-Copy the example file and fill in your values:
+
+**Backend** — copy the example file and fill in your values:
 ```bash
 cp backend/.env.example backend/.env
 ```
@@ -115,6 +166,18 @@ FRONTEND_URL=http://localhost:3000
 PAGE_SIZE_CARD=6
 PAGE_SIZE_TABLE=10
 MAX_PAGE_SIZE=50
+```
+
+**Frontend** — copy the example file and fill in your values:
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Edit `frontend/.env`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_PAGE_SIZE_CARD=6
+NEXT_PUBLIC_PAGE_SIZE_TABLE=10
 ```
 
 ### 5. Run with Docker
@@ -147,39 +210,92 @@ hirevia/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/
-│   │   │   ├── admin/      # JWT-protected admin routes
-│   │   │   └── public/     # Public applicant routes
-│   │   ├── core/           # Config, database, dependencies
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── repositories/   # Database queries
-│   │   ├── schemas/        # Pydantic request/response models
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Security, storage, email helpers
+│   │   │   ├── admin/          # JWT-protected admin routes
+│   │   │   └── public/         # Public applicant routes
+│   │   ├── core/               # Config, database, dependencies
+│   │   ├── models/             # SQLAlchemy ORM models
+│   │   ├── repositories/       # Database queries
+│   │   ├── schemas/            # Pydantic request/response models
+│   │   ├── services/           # Business logic
+│   │   └── utils/              # Security, storage, email helpers
 │   ├── scripts/
-│   │   └── seed_admin.py   # Creates initial head admin
-│   ├── init.sql            # Database schema
+│   │   └── seed_admin.py       # Creates initial head admin
 │   └── .env.example
 └── frontend/
-    └── app/
-        ├── (public)/       # Public applicant site
-        └── (admin)/        # HR admin dashboard
+    ├── app/
+    │   ├── (public)/           # Public applicant site
+    │   └── admin/              # HR admin dashboard (JWT-guarded layout)
+    ├── components/
+    │   ├── admin/              # Smart components (jobs-table, users-table, job-form-fields)
+    │   └── ui/                 # shadcn/ui primitives
+    ├── contexts/               # AdminContext — current user shared across dashboard
+    ├── hooks/                  # Presenter layer — 15 domain hooks (use-careers, use-job, use-application, …)
+    └── lib/
+        ├── api.ts              # HTTP client (publicFetch, adminFetch)
+        ├── actions/            # API call functions, one file per domain
+        ├── models/             # TypeScript interfaces, one file per domain
+        └── utils/              # constants.ts, format.utils.ts
 ```
 
 ---
 
 ## Architecture
 
-The backend follows a layered architecture:
+### Backend
+
+Strict layered architecture — each layer has one responsibility and communicates only with the layer below it:
 
 ```
 Route → Service → Repository → Database
 ```
 
-- **Routes** — handle HTTP requests/responses, catch service exceptions
-- **Services** — business logic, raise plain Python exceptions
-- **Repositories** — database queries only, no business logic
-- **Models** — SQLAlchemy ORM, never exposed directly to API
-- **Schemas** — Pydantic models for request/response validation
+| Layer | Responsibility |
+|-------|---------------|
+| **Routes** | HTTP request/response, parameter parsing, exception-to-status-code mapping |
+| **Services** | Business logic only — raises plain Python exceptions, no FastAPI imports |
+| **Repositories** | Database queries only — accepts `dict`, no business logic |
+| **Models** | SQLAlchemy ORM definitions, never exposed directly to the API |
+| **Schemas** | Pydantic models for request validation and response serialization |
+
+### Frontend — MVP Pattern
+
+The frontend follows a strict MVP (Model–View–Presenter) pattern. Pages are thin Views; all logic lives in Presenter hooks.
+
+```
+View (Page/Component) → Presenter (Hook) → Model (Action) → API Client → Backend
+```
+
+| MVP Role | Location | Responsibility |
+|----------|----------|---------------|
+| **Model** | `lib/actions/` + `lib/models/` | API calls and TypeScript interfaces, one file per domain |
+| **Presenter** | `hooks/` | All state, effects, derived values, and event handlers — one hook per page/feature |
+| **View** | `app/` pages + `components/` | Pure rendering only — calls one hook, maps returned data to JSX |
+
+**Presenter hooks (15 total):**
+
+| Hook | Used by |
+|------|---------|
+| `use-featured-jobs` | Home page |
+| `use-careers` | Careers listing (filters, pagination, debounce) |
+| `use-career` | Job detail |
+| `use-apply` | Application form (upload + submit) |
+| `use-application-status` | Magic link status page |
+| `use-login` | Admin login |
+| `use-dashboard` | Dashboard stats |
+| `use-jobs-table` | Jobs list + archived (filters, pagination, archive action) |
+| `use-job` | Job detail (status change, archive) |
+| `use-job-form` | Create job / Edit job (shared form logic) |
+| `use-applications-table` | Applications list (filters, pagination) |
+| `use-application` | Application detail (pipeline actions, interview scheduling) |
+| `use-users-table` | Users list (filters, pagination) |
+| `use-user` | User detail (edit, suspend, self-protection) |
+| `use-create-user` | Create admin form |
+
+**Supporting layers:**
+- `lib/api.ts` — Low-level HTTP client (`publicFetch`, `adminFetch`), token management
+- `lib/utils/constants.ts` — Status color maps, page size config
+- `lib/utils/format.utils.ts` — Display formatters (salary, job type)
+- `contexts/admin-context.tsx` — Current user provided via React Context to all dashboard pages
 
 ---
 

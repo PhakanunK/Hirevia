@@ -16,6 +16,7 @@ class UpcomingInterview(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class LatestApplication(BaseModel):
+    id: int
     applicant_name: str
     job_title: str
     applied_date: datetime
