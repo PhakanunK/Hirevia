@@ -47,6 +47,8 @@ The main goal is to explore how production-style systems are designed and implem
 
 ## Screenshots
 
+> All names, email addresses, and applicant data shown in the screenshots are entirely fictional and used for demonstration purposes only.
+
 ### Public Site
 
 | Careers | Job Detail |
