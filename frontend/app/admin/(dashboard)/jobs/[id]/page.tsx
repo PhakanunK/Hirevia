@@ -24,7 +24,7 @@ export default function JobDetailPage({
   if (error || !job) return <PageError message={error ?? "Job not found"} action={{ label: "Back to Jobs", onClick: () => router.push("/admin/jobs") }} />
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-12">
       <h1 className="mb-8 text-2xl font-bold">Job Detail</h1>
 
       <div className="mb-8">

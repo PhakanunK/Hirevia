@@ -59,13 +59,13 @@ export default function ApplicationDetailPage({
     <PageError message={error} action={{ label: "Retry", onClick: () => window.location.reload() }} />
   )
   if (!application) return (
-    <div className="container mx-auto px-4 py-8 text-center">
+    <div className="container mx-auto px-4 py-12 text-center">
       <p className="text-muted-foreground">Application not found</p>
     </div>
   )
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-12">
       <h1 className="mb-8 text-2xl font-bold">Applications</h1>
 
       {error && (
