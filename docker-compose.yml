@@ -16,5 +16,6 @@ services:
     volumes:
       - ./frontend:/frontend
       - /frontend/node_modules
+      - /frontend/.next
     environment:
       - WATCHPACK_POLLING=true
