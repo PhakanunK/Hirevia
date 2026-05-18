@@ -1,6 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.utils.storage import upload_resume
+import logging
 import uuid
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -17,4 +20,5 @@ async def upload_resume_file(file: UploadFile = File(...)):
         url = upload_resume(file_bytes, filename, file.content_type)
         return {"url": url}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))  # ← show real error
+        logger.error("Resume upload failed: %s", e)
+        raise HTTPException(status_code=500, detail="File upload failed. Please try again.")
