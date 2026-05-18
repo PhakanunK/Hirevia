@@ -1,8 +1,11 @@
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 from app.api.v1.admin import auth, users, jobs as admin_jobs, applications as admin_applications, dashboard
 from app.api.v1.public import jobs as public_jobs, apply, status, upload
 
@@ -39,4 +42,5 @@ def health_check():
         db.close()
         return {"status": "ok", "database": "connected"}
     except Exception as e:
-        return {"status": "error", "database": str(e)}
+        logger.exception("Health check database error")
+        return {"status": "error", "database": "unavailable"}
