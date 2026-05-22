@@ -182,7 +182,18 @@ NEXT_PUBLIC_PAGE_SIZE_CARD=6
 NEXT_PUBLIC_PAGE_SIZE_TABLE=10
 ```
 
-### 5. Run with Docker
+### 5. (Optional) Load demo data
+
+To explore the system with pre-populated jobs and applications, run `database-init/demo-data.sql` in the Supabase SQL Editor **after** `init.sql` and the first Docker startup (which seeds the admin account).
+
+The demo data includes:
+- 10 job postings across all statuses (open, draft, closed, archived)
+- 20 applicants distributed across every pipeline stage (applied → screening → interview → offer / rejected)
+- Magic link tokens for all applicants
+
+> **Note:** Applicant emails in the demo data are fictional. On Resend's free tier, email notifications only deliver to your verified address — status changes still work; undeliverable emails are silently ignored.
+
+### 6. Run with Docker
 ```bash
 docker-compose up --build
 ```
@@ -209,6 +220,9 @@ Once running, visit:
 
 ```
 hirevia/
+├── database-init/
+│   ├── init.sql                # Schema — tables, enums, indexes
+│   └── demo-data.sql           # Optional seed data for portfolio demo
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/
