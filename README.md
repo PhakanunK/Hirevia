@@ -136,6 +136,8 @@ WITH CHECK (bucket_id = 'resumes');
 3. For development, use `onboarding@resend.dev` as the from address (emails may go to spam)
 4. For production, verify your own domain in Resend settings
 
+> **Testing tip:** Resend's free tier only delivers emails to your verified address. To test the full email flow, submit an application using that address. If you use any other email, the application still goes through and the success page will show your magic link directly — copy it then, as it won't be sent to your inbox.
+
 ### 4. Configure environment variables
 
 **Backend** — copy the example file and fill in your values:

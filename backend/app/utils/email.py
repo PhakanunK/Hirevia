@@ -4,19 +4,22 @@ from app.core.config import settings
 resend.api_key = settings.RESEND_API_KEY
 
 def send_application_confirmation(to_email: str, first_name: str, job_title: str, tracking_token: str):
-    resend.Emails.send({
-        "from": settings.RESEND_FROM_EMAIL,
-        "to": to_email,
-        "subject": f"Application Received — {job_title}",
-        "html": f"""
-            <h2>Hi {first_name}!</h2>
-            <p>We received your application for <strong>{job_title}</strong>.</p>
-            <p>Track your application status here:</p>
-            <a href="{settings.FRONTEND_URL}/status?token={tracking_token}">
-                Track Application
-            </a>
-        """
-    })
+    try:
+        resend.Emails.send({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": to_email,
+            "subject": f"Application Received — {job_title}",
+            "html": f"""
+                <h2>Hi {first_name}!</h2>
+                <p>We received your application for <strong>{job_title}</strong>.</p>
+                <p>Track your application status here:</p>
+                <a href="{settings.FRONTEND_URL}/status?token={tracking_token}">
+                    Track Application
+                </a>
+            """
+        })
+    except Exception:
+        pass
 
 def send_status_update(to_email: str, first_name: str, job_title: str, status: str, interview_date=None):
     messages = {
@@ -35,12 +38,15 @@ def send_status_update(to_email: str, first_name: str, job_title: str, status: s
         "declined": f"Application Update — {job_title}",
     }
 
-    resend.Emails.send({
-        "from": settings.RESEND_FROM_EMAIL,
-        "to": to_email,
-        "subject": subjects.get(status, f"Application Update — {job_title}"),
-        "html": f"""
-            <h2>Hi {first_name}!</h2>
-            <p>{messages.get(status, "Your application status has been updated.")}</p>
-        """
-    })
+    try:
+        resend.Emails.send({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": to_email,
+            "subject": subjects.get(status, f"Application Update — {job_title}"),
+            "html": f"""
+                <h2>Hi {first_name}!</h2>
+                <p>{messages.get(status, "Your application status has been updated.")}</p>
+            """
+        })
+    except Exception:
+        pass
